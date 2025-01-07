@@ -23,13 +23,39 @@ prefs = {
 }
 options.add_experimental_option("prefs", prefs)
 options.add_argument('--disable-gpu')
-options.add_argument("--log-level=0")
+options.add_argument("--log-level=3")
 options.add_argument('--ignore-certificate-errors')
+options.add_argument('--enable-unsafe-swiftshader')
+
+# Add these new options to clear cache and cookies
+options.add_argument('--incognito')  # Use incognito mode
+options.add_argument('--disable-cache')  # Disable cache
+options.add_argument('--disable-application-cache')  # Disable application cache
+options.add_argument('--disable-offline-load-stale-cache')  # Disable offline cache
 
 driver = webdriver.Chrome(options=options)
 
 # URL to scrape
-url = "https://www.blocket.se/annonser/hela_sverige/fritid_hobby?cg=6000"
+main_url = "https://www.blocket.se/annonser/hela_sverige/elektronik?cg=5000"
+
+# First navigate to the URL
+driver.get(main_url)
+
+# Then clear everything
+try:
+    driver.delete_all_cookies()
+    driver.execute_script("window.localStorage.clear();")
+    driver.execute_script("window.sessionStorage.clear();")
+except Exception as e:
+    print(f"Warning: Could not clear browser data: {e}")
+
+# Verify we're on the right page
+current_url = driver.current_url
+if "elektronik" not in current_url:  # adjust this based on your expected URL
+    print(f"Warning: Unexpected URL: {current_url}")
+    print(f"Expected URL to contain 'elektronik'")
+    # Optionally force the correct URL
+    driver.get(main_url)
 
 # Configure number of pages to scrape
 PAGES_TO_SCRAPE = 1
@@ -40,7 +66,7 @@ all_pages_data = {}
 # Initialize translator
 translator = GoogleTranslator(source='auto', target='en')
 
-def scroll_gradually(driver, pause_time=0.25):
+def scroll_gradually(driver, pause_time=0.125):
     """Scroll until no new content loads"""
     # Initial wait for first batch of content
     time.sleep(pause_time)
@@ -49,6 +75,7 @@ def scroll_gradually(driver, pause_time=0.25):
     scroll_script = """
         return new Promise((resolve) => {
             const windowHeight = window.innerHeight;
+            const scrollStep = windowHeight ;  
             const scrollInterval = setInterval(() => {
                 const scrollHeight = document.documentElement.scrollHeight;
                 const scrollPosition = window.pageYOffset;
@@ -57,9 +84,9 @@ def scroll_gradually(driver, pause_time=0.25):
                     clearInterval(scrollInterval);
                     resolve('bottom');
                 } else {
-                    window.scrollBy(0, windowHeight);
+                    window.scrollBy(0, scrollStep);
                 }
-            }, 250);  // Scroll every second
+            }, 125);  // Scroll every 250ms
         });
     """
     
@@ -69,7 +96,7 @@ def scroll_gradually(driver, pause_time=0.25):
     # Wait for scrolling to complete
     while True:
         current_height = driver.execute_script("return document.documentElement.scrollHeight")
-        time.sleep(0.25)
+        time.sleep(0.125)
         new_height = driver.execute_script("return document.documentElement.scrollHeight")
         
         if current_height == new_height:
@@ -113,9 +140,9 @@ def accept_cookies(driver):
         return False
 
 for page in range(1, PAGES_TO_SCRAPE + 1):
-    page_url = f"{url}&page={page}" if page > 1 else url
+    page_url = f"{main_url}&page={page}" if page > 1 else main_url
     
-    print(f"Scraping page {page}...")
+    print(f"Scraping {page_url}...")
     
     # Get the page and wait for initial content
     driver.get(page_url)
@@ -220,7 +247,7 @@ for page in range(1, PAGES_TO_SCRAPE + 1):
     all_pages_data[page] = page_data_list
     
     # Optional: Add a small delay between pages to be polite
-    time.sleep(1)
+    time.sleep(2)
 
 # Close the driver
 driver.quit()
@@ -280,7 +307,7 @@ end_time_single = time.time()
 print(f"Chunked single string translation took {end_time_single - start_time_single:.2f} seconds")
 
 # Save the translated data
-with open('blocket_ads.json', 'w', encoding='utf-8') as f:
+with open('./json_dumps/blocket_ads.json', 'w', encoding='utf-8') as f:
     json.dump(all_pages_data, f, ensure_ascii=False, indent=4)
 
 print(f"Scraping and translation completed. Data from {PAGES_TO_SCRAPE} pages saved to blocket_ads.json.")
