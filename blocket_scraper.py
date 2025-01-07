@@ -10,10 +10,10 @@ from deep_translator import GoogleTranslator
 
 # Configure Selenium WebDriver (make sure you have ChromeDriver installed)
 options = webdriver.ChromeOptions()
-# options.add_argument('--headless')  # Remove headless mode
+options.add_argument('--headless')  # Enable headless mode
 options.add_argument('--no-sandbox')
 options.add_argument('--disable-dev-shm-usage')
-options.add_argument('--start-maximized')  # Start with maximized window
+
 options.add_argument('--disable-blink-features=AutomationControlled')  # Try to avoid detection
 options.add_experimental_option('excludeSwitches', ['enable-automation'])
 options.add_experimental_option('useAutomationExtension', False)
@@ -24,9 +24,7 @@ prefs = {
 options.add_experimental_option("prefs", prefs)
 options.add_argument('--disable-gpu')
 options.add_argument("--log-level=0")
-options.add_argument('--window-size=1920,1080')
 options.add_argument('--ignore-certificate-errors')
-options.add_argument('--disable-extensions')
 
 driver = webdriver.Chrome(options=options)
 
@@ -42,7 +40,7 @@ all_pages_data = {}
 # Initialize translator
 translator = GoogleTranslator(source='auto', target='en')
 
-def scroll_gradually(driver, pause_time=1):
+def scroll_gradually(driver, pause_time=0.25):
     """Scroll until no new content loads"""
     # Initial wait for first batch of content
     time.sleep(pause_time)
@@ -61,7 +59,7 @@ def scroll_gradually(driver, pause_time=1):
                 } else {
                     window.scrollBy(0, windowHeight);
                 }
-            }, 1000);  // Scroll every second
+            }, 250);  // Scroll every second
         });
     """
     
@@ -71,7 +69,7 @@ def scroll_gradually(driver, pause_time=1):
     # Wait for scrolling to complete
     while True:
         current_height = driver.execute_script("return document.documentElement.scrollHeight")
-        time.sleep(1)
+        time.sleep(0.25)
         new_height = driver.execute_script("return document.documentElement.scrollHeight")
         
         if current_height == new_height:
@@ -188,7 +186,7 @@ for page in range(1, PAGES_TO_SCRAPE + 1):
                 print("No picture tag found")
                 largest_image_url = None
 
-            print(f"Largest image URL: {largest_image_url}")
+            # print(f"Largest image URL: {largest_image_url}")
             
             page_data_list.append({
                 'title': {
@@ -205,12 +203,24 @@ for page in range(1, PAGES_TO_SCRAPE + 1):
             print(f"Error extracting data: {e}")
 
     print(f"Found {len(page_data_list)} ads")
+    
+    # Count non-None values for each field
+    title_count = sum(1 for ad in page_data_list if ad['title']['original'])
+    url_count = sum(1 for ad in page_data_list if ad['link'])
+    price_count = sum(1 for ad in page_data_list if ad['price'])
+    image_count = sum(1 for ad in page_data_list if ad['main_image'])
+    
+    print(f"Breakdown of data found:")
+    print(f"- Titles: {title_count}")
+    print(f"- URLs: {url_count}")
+    print(f"- Prices: {price_count}")
+    print(f"- Images: {image_count}")
 
     # Store this page's data in the main dictionary
     all_pages_data[page] = page_data_list
     
     # Optional: Add a small delay between pages to be polite
-    time.sleep(2)
+    time.sleep(1)
 
 # Close the driver
 driver.quit()
@@ -260,7 +270,7 @@ try:
         translated_chunk = translator.translate(single_string)
         translated_titles.extend(translated_chunk.split(". "))
 
-    for original, translated in zip(all_titles, translated_titles):
+    for original, translated in zip(all_titles, translated_titles[:len(all_titles)]):  # Ensure we only use as many translations as we have titles
         title_map[original]['title']['english'] = translated
 except Exception as e:
     print(f"Single string translation error: {e}")
