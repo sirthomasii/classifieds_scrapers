@@ -10,9 +10,23 @@ from deep_translator import GoogleTranslator
 
 # Configure Selenium WebDriver (make sure you have ChromeDriver installed)
 options = webdriver.ChromeOptions()
-options.add_argument('--headless')  # Run in headless mode
+# options.add_argument('--headless')  # Remove headless mode
 options.add_argument('--no-sandbox')
 options.add_argument('--disable-dev-shm-usage')
+options.add_argument('--start-maximized')  # Start with maximized window
+options.add_argument('--disable-blink-features=AutomationControlled')  # Try to avoid detection
+options.add_experimental_option('excludeSwitches', ['enable-automation'])
+options.add_experimental_option('useAutomationExtension', False)
+prefs = {
+    "profile.managed_default_content_settings.images": 1,  # Enable images
+    "profile.default_content_setting_values.notifications": 2  # Block notifications
+}
+options.add_experimental_option("prefs", prefs)
+options.add_argument('--disable-gpu')
+options.add_argument("--log-level=0")
+options.add_argument('--window-size=1920,1080')
+options.add_argument('--ignore-certificate-errors')
+options.add_argument('--disable-extensions')
 
 driver = webdriver.Chrome(options=options)
 
@@ -28,17 +42,97 @@ all_pages_data = {}
 # Initialize translator
 translator = GoogleTranslator(source='auto', target='en')
 
+def scroll_gradually(driver, pause_time=1):
+    """Scroll until no new content loads"""
+    # Initial wait for first batch of content
+    time.sleep(pause_time)
+    
+    # JavaScript function to scroll gradually
+    scroll_script = """
+        return new Promise((resolve) => {
+            const windowHeight = window.innerHeight;
+            const scrollInterval = setInterval(() => {
+                const scrollHeight = document.documentElement.scrollHeight;
+                const scrollPosition = window.pageYOffset;
+                
+                if (scrollPosition + windowHeight >= scrollHeight) {
+                    clearInterval(scrollInterval);
+                    resolve('bottom');
+                } else {
+                    window.scrollBy(0, windowHeight);
+                }
+            }, 1000);  // Scroll every second
+        });
+    """
+    
+    # Execute the gradual scroll
+    driver.execute_script(scroll_script)
+    
+    # Wait for scrolling to complete
+    while True:
+        current_height = driver.execute_script("return document.documentElement.scrollHeight")
+        time.sleep(1)
+        new_height = driver.execute_script("return document.documentElement.scrollHeight")
+        
+        if current_height == new_height:
+            break
+
+def accept_cookies(driver):
+    """Find and click the accept cookies button"""
+    try:
+        print("Looking for cookie consent iframe...")
+        
+        # Wait for the iframe to be present
+        iframe = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, "iframe[id^='sp_message_iframe']"))
+        )
+        
+        # Switch to the iframe context
+        driver.switch_to.frame(iframe)
+        print("Switched to iframe context")
+        
+        # Look for the accept button within the iframe
+        try:
+            accept_button = WebDriverWait(driver, 5).until(
+                EC.element_to_be_clickable((By.CSS_SELECTOR, "button[title='Godkänn alla cookies']"))
+            )
+            print("Found accept button")
+            accept_button.click()
+            print("Clicked accept button")
+        except Exception as e:
+            print(f"Failed to find/click accept button: {e}")
+        
+        # Switch back to default content
+        driver.switch_to.default_content()
+        print("Switched back to main context")
+        
+        return True
+        
+    except Exception as e:
+        print(f"Could not handle cookie popup: {e}")
+        # Make sure we're back in the main context
+        driver.switch_to.default_content()
+        return False
+
 for page in range(1, PAGES_TO_SCRAPE + 1):
-    # Modify URL for pagination
     page_url = f"{url}&page={page}" if page > 1 else url
     
     print(f"Scraping page {page}...")
     
-    # Get and cache the page source
+    # Get the page and wait for initial content
     driver.get(page_url)
+    
+    # Handle cookie popup before proceeding (but don't stop if it fails)
+    if page == 1:  # Only try this on first page
+        accept_cookies(driver)
+    
     WebDriverWait(driver, 10).until(
         EC.presence_of_element_located((By.TAG_NAME, "article"))
     )
+    
+    # Continue with scrolling...
+    scroll_gradually(driver)
+    
     page_source = driver.page_source
     page_soup = BeautifulSoup(page_source, 'html.parser')
 
