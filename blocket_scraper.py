@@ -20,7 +20,7 @@ driver = webdriver.Chrome(options=options)
 url = "https://www.blocket.se/annonser/hela_sverige/fritid_hobby?cg=6000"
 
 # Configure number of pages to scrape
-PAGES_TO_SCRAPE = 2
+PAGES_TO_SCRAPE = 1
 
 # Initialize dictionary to store data by page
 all_pages_data = {}
@@ -48,7 +48,7 @@ for page in range(1, PAGES_TO_SCRAPE + 1):
     for article in articles:
         try:
             # Get link
-            link_elem = article.find('a')
+            link_elem = article.find('a', class_=lambda x: x and 'StyledTitleLink' in x)
             link = link_elem.get('href') if link_elem else None
             
             # Get title and translate it
@@ -62,18 +62,39 @@ for page in range(1, PAGES_TO_SCRAPE + 1):
             # Get image from picture tag and srcset
             picture = article.find('picture')
             if picture:
-                source = picture.find('source', {'type': 'image/jpeg'})
-                if source and source.get('srcset'):
-                    # Split srcset and find 540w version
-                    srcset = source['srcset'].split(',')
-                    image_540 = next(
-                        (url.strip().split(' ')[0] for url in srcset if '540w' in url),
-                        None
-                    )
+                # Try WebP source first, fall back to JPEG
+                source = picture.find('source', {'type': 'image/webp'}) or picture.find('source', {'type': 'image/jpeg'})
+                if source:
+                    srcset = source.get('srcset')
+                    if srcset:
+                        # Split srcset and parse into width-url pairs
+                        srcset_items = srcset.split(',')
+                        image_versions = []
+                        for item in srcset_items:
+                            parts = item.strip().split()
+                            if len(parts) == 2:
+                                url, width = parts
+                                width = int(width.rstrip('w'))
+                                image_versions.append((url, width))
+                        
+                        # Get URL of highest resolution version
+                        if image_versions:
+                            largest_image_url = max(image_versions, key=lambda x: x[1])[0]
+                        else:
+                            largest_image_url = None
+                    else:
+                        print("No srcset found in source")
+                        largest_image_url = None
                 else:
-                    image_540 = None
+                    print("No source found in picture")
+                    # Fallback to img tag src if no srcset
+                    img = picture.find('img')
+                    largest_image_url = img.get('src') if img else None
             else:
-                image_540 = None
+                print("No picture tag found")
+                largest_image_url = None
+
+            print(f"Largest image URL: {largest_image_url}")
             
             page_data_list.append({
                 'title': {
@@ -81,7 +102,7 @@ for page in range(1, PAGES_TO_SCRAPE + 1):
                     'english': None
                 },
                 'description': None,
-                'main_image': image_540,
+                'main_image': largest_image_url,
                 'link': link,
                 'price': price
             })
@@ -114,16 +135,37 @@ for page_num in all_pages_data:
             # Store reference to this ad using its title as key
             title_map[ad['title']['original']] = ad
 
-# Measure time for single string translation
+# Function to split titles into chunks
+def split_into_chunks(titles, max_length=5000):
+    chunks = []
+    current_chunk = []
+    current_length = 0
+
+    for title in titles:
+        title_length = len(title) + 2  # Account for ". " separator
+        if current_length + title_length > max_length:
+            chunks.append(current_chunk)
+            current_chunk = []
+            current_length = 0
+        current_chunk.append(title)
+        current_length += title_length
+
+    if current_chunk:
+        chunks.append(current_chunk)
+
+    return chunks
+
+# Measure time for chunked single string translation
 start_time_single = time.time()
 try:
-    # Join titles with a period and a space to ensure clear separation
-    single_string = ". ".join(all_titles)
-    translated_single_string = translator.translate(single_string)
-    
-    # Split the translated string back into individual titles
-    translated_titles = translated_single_string.split(". ")  # Adjust split logic as needed
-    
+    chunks = split_into_chunks(all_titles)
+    translated_titles = []
+
+    for chunk in chunks:
+        single_string = ". ".join(chunk)
+        translated_chunk = translator.translate(single_string)
+        translated_titles.extend(translated_chunk.split(". "))
+
     for original, translated in zip(all_titles, translated_titles):
         title_map[original]['title']['english'] = translated
 except Exception as e:
@@ -131,7 +173,7 @@ except Exception as e:
     for title in all_titles:
         title_map[title]['title']['english'] = title
 end_time_single = time.time()
-print(f"Single string translation took {end_time_single - start_time_single:.2f} seconds")
+print(f"Chunked single string translation took {end_time_single - start_time_single:.2f} seconds")
 
 # Save the translated data
 with open('blocket_ads.json', 'w', encoding='utf-8') as f:
