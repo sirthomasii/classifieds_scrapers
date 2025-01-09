@@ -7,6 +7,7 @@ from bs4 import BeautifulSoup
 import time
 import json
 from deep_translator import GoogleTranslator
+from datetime import datetime, timedelta
 
 # Configure Selenium WebDriver (make sure you have ChromeDriver installed)
 options = webdriver.ChromeOptions()
@@ -56,9 +57,6 @@ if "elektronik" not in current_url:  # adjust this based on your expected URL
     print(f"Expected URL to contain 'elektronik'")
     # Optionally force the correct URL
     driver.get(main_url)
-
-# Configure number of pages to scrape
-PAGES_TO_SCRAPE = 1
 
 # Initialize dictionary to store data by page
 all_pages_data = {}
@@ -139,7 +137,27 @@ def accept_cookies(driver):
         driver.switch_to.default_content()
         return False
 
-for page in range(1, PAGES_TO_SCRAPE + 1):
+def parse_swedish_time(time_text):
+    """Convert Swedish time text to datetime object"""
+    now = datetime.now()
+    if 'Idag' in time_text:
+        # Extract HH:MM from "Idag HH:MM"
+        time_part = time_text.replace('Idag', '').strip()
+        hour, minute = map(int, time_part.split(':'))
+        return now.replace(hour=hour, minute=minute, second=0, microsecond=0)
+    elif 'Igår' in time_text:
+        # Extract HH:MM from "Igår HH:MM"
+        time_part = time_text.replace('Igår', '').strip()
+        hour, minute = map(int, time_part.split(':'))
+        yesterday = now - timedelta(days=1)
+        return yesterday.replace(hour=hour, minute=minute, second=0, microsecond=0)
+    return None
+
+# Remove the PAGES_TO_SCRAPE constant as we'll now use dynamic stopping
+found_yesterday = False
+page = 1
+
+while not found_yesterday:
     page_url = f"{main_url}&page={page}" if page > 1 else main_url
     
     print(f"Scraping {page_url}...")
@@ -166,6 +184,14 @@ for page in range(1, PAGES_TO_SCRAPE + 1):
     articles = page_soup.find_all('article')
     for article in articles:
         try:
+            # Add time extraction
+            time_container = article.find('p', class_=lambda x: x and 'styled__Time' in x)
+            time_text = time_container.get_text(strip=True) if time_container else None
+            timestamp = parse_swedish_time(time_text) if time_text else None
+            
+            if time_text and 'Igår' in time_text:
+                found_yesterday = True
+
             # Get link
             link_elem = article.find('a', class_=lambda x: x and 'StyledTitleLink' in x)
             link = link_elem.get('href') if link_elem else None
@@ -223,7 +249,8 @@ for page in range(1, PAGES_TO_SCRAPE + 1):
                 'description': None,
                 'main_image': largest_image_url,
                 'link': link,
-                'price': price
+                'price': price,
+                'timestamp': timestamp.isoformat() if timestamp else None  # Add timestamp to output
             })
             
         except Exception as e:
@@ -242,12 +269,20 @@ for page in range(1, PAGES_TO_SCRAPE + 1):
     print(f"- URLs: {url_count}")
     print(f"- Prices: {price_count}")
     print(f"- Images: {image_count}")
+    print(f"- Timestamps: {sum(1 for ad in page_data_list if ad['timestamp'])}")
 
     # Store this page's data in the main dictionary
     all_pages_data[page] = page_data_list
     
     # Optional: Add a small delay between pages to be polite
     time.sleep(2)
+
+    page += 1
+    
+    # Add a safety limit to prevent infinite loops
+    if page > 100:  # Adjust this number as needed
+        print("Reached maximum page limit, stopping...")
+        break
 
 # Close the driver
 driver.quit()
@@ -310,4 +345,4 @@ print(f"Chunked single string translation took {end_time_single - start_time_sin
 with open('./json_dumps/blocket_ads.json', 'w', encoding='utf-8') as f:
     json.dump(all_pages_data, f, ensure_ascii=False, indent=4)
 
-print(f"Scraping and translation completed. Data from {PAGES_TO_SCRAPE} pages saved to blocket_ads.json.")
+print(f"Scraping and translation completed. Data from {page-1} pages saved to blocket_ads.json.")
