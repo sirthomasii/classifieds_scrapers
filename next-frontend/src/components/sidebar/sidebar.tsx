@@ -28,37 +28,39 @@ export function Sidebar({
       <Stack gap="md">
         <Text size="xl" fw={700} color="white">Marketplaces</Text>
         <Accordion variant="filled">
-          {['blocket', 'gumtree', 'kleinanzeigen'].map((marketplace) => (
-            <Accordion.Item key={marketplace} value={marketplace}>
-              <Accordion.Control 
-                onClick={() => onMarketplaceChange(marketplace)}
-                style={{ 
-                  backgroundColor: selectedMarketplace === marketplace ? '#4a4a4a' : 'transparent',
-                  color: 'white'
-                }}
-              >
-                {marketplace.charAt(0).toUpperCase() + marketplace.slice(1)}
-              </Accordion.Control>
-              <Accordion.Panel>
-                {marketplaceData?.[marketplace as keyof typeof marketplaceData] && 
-                  Object.keys(marketplaceData[marketplace as keyof typeof marketplaceData]).map((category) => (
-                    <Text
-                      key={category}
-                      onClick={() => onCategoryChange(category)}
-                      style={{
-                        cursor: 'pointer',
-                        padding: '8px',
-                        backgroundColor: selectedCategory === category ? '#3a3a3a' : 'transparent',
-                        color: 'white'
-                      }}
-                    >
-                      {category}
-                    </Text>
-                  ))
-                }
-              </Accordion.Panel>
-            </Accordion.Item>
-          ))}
+          <Accordion.Item value="all">
+            <Accordion.Control 
+              onClick={() => {
+                onMarketplaceChange('all');
+                onCategoryChange(null);
+              }}
+              style={{ 
+                backgroundColor: selectedMarketplace === 'all' ? '#4a4a4a' : 'transparent',
+                color: 'white'
+              }}
+            >
+              All Websites
+            </Accordion.Control>
+            <Accordion.Panel>
+              {['blocket', 'gumtree', 'kleinanzeigen'].map((marketplace) => (
+                <Text
+                  key={marketplace}
+                  onClick={() => {
+                    onMarketplaceChange(marketplace);
+                    onCategoryChange(null);
+                  }}
+                  style={{
+                    cursor: 'pointer',
+                    padding: '8px',
+                    backgroundColor: selectedMarketplace === marketplace ? '#3a3a3a' : 'transparent',
+                    color: 'white'
+                  }}
+                >
+                  {marketplace.charAt(0).toUpperCase() + marketplace.slice(1)}
+                </Text>
+              ))}
+            </Accordion.Panel>
+          </Accordion.Item>
         </Accordion>
       </Stack>
     </Box>

@@ -19,7 +19,10 @@ export function Viewport({
   const [searchQuery, setSearchQuery] = useState('');
   const itemsPerPage = 12;
 
-  const filteredData = marketplaceData?.[selectedCategory ?? ''] ?? [];
+  const filteredData = selectedCategory ? 
+    (marketplaceData?.[selectedCategory] ?? []) :
+    Object.values(marketplaceData ?? {}).flat();
+
   const searchedData = filteredData.filter(item => 
     item.title?.english?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     item.title?.original?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -32,7 +35,7 @@ export function Viewport({
   );
 
   return (
-    <Box p="md">
+    <Box p="md" style={{ maxHeight: '100vh', overflowY: 'auto' }}>
       <AnimatePresence mode="wait">
         <motion.div
           initial={{ opacity: 0 }}
@@ -64,7 +67,7 @@ export function Viewport({
                   shadow="sm" 
                   padding="lg" 
                   style={{ 
-                    width: 300,
+                    width: 250,
                     backgroundColor: 'rgba(255, 255, 255, 0.1)',
                     backdropFilter: 'blur(10px)',
                     color: 'white'
@@ -75,7 +78,11 @@ export function Viewport({
                       <img
                         src={item.main_image}
                         alt={item.title?.english || 'Product image'}
-                        style={{ width: '100%', height: 200, objectFit: 'cover' }}
+                        style={{ 
+                          width: '100%', 
+                          height: 150, 
+                          objectFit: 'cover'
+                        }}
                       />
                     </Card.Section>
                   )}

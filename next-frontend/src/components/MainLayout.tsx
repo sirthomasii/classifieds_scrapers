@@ -67,6 +67,29 @@ export function MainLayout({ children }: MainLayoutProps) {
     setIsSidebarVisible(!isSidebarVisible);
   };
 
+  const getCurrentMarketplaceData = (): MarketplaceData | undefined => {
+    if (!marketplaceData) return undefined;
+    
+    if (selectedMarketplace === 'all') {
+      // Merge all items from all marketplaces
+      return Object.values(marketplaceData).reduce((acc, marketplace) => {
+        // Merge all pages into a single array
+        const allItems = Object.values(marketplace).flat();
+        // Add to accumulator
+        if (allItems.length > 0) {
+          acc['all'] = acc['all'] ? [...acc['all'], ...allItems] : allItems;
+        }
+        return acc;
+      }, {} as MarketplaceData);
+    }
+
+    // For single marketplace, just merge all pages into a single array
+    const currentMarketplace = marketplaceData[selectedMarketplace as keyof typeof marketplaceData];
+    return {
+      'all': Object.values(currentMarketplace).flat()
+    };
+  };
+
   return (
     <Container 
       size="xl" 
@@ -111,7 +134,7 @@ export function MainLayout({ children }: MainLayoutProps) {
         </Box>
         <Box style={{ flex: 1, position: 'relative', backgroundColor: 'rgba(0, 0, 0, 0.75)', borderRight: '1px solid rgba(255, 255, 255, 0.25)' }}>
           <Viewport 
-            marketplaceData={marketplaceData?.[selectedMarketplace as keyof typeof marketplaceData]}
+            marketplaceData={getCurrentMarketplaceData()}
             selectedCategory={selectedCategory}
           />
         </Box>
