@@ -8,6 +8,10 @@ import time
 import json
 from deep_translator import GoogleTranslator
 from datetime import datetime, timedelta
+import os
+
+# Change to script directory
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 # Configure Selenium WebDriver (make sure you have ChromeDriver installed)
 options = webdriver.ChromeOptions()
@@ -227,7 +231,7 @@ while not found_yesterday:
                     },
                     'description': description,
                     'main_image': largest_image_url,
-                    'link': link,
+                    'link': "https://www.kleinanzeigen.de"+link,
                     'price': price,
                     'timestamp': timestamp.isoformat() if timestamp else None,
                 })
@@ -321,8 +325,11 @@ except Exception as e:
 end_time_single = time.time()
 print(f"Chunked single string translation took {end_time_single - start_time_single:.2f} seconds")
 
+# Ensure the directory exists
+os.makedirs('../next-frontend/public/json_dumps', exist_ok=True)
+
 # Save the translated data
-with open('./json_dumps/kleinanzeigen_ads.json', 'w', encoding='utf-8') as f:
+with open('../next-frontend/public/jsons/kleinanzeigen_ads.json', 'w', encoding='utf-8') as f:
     json.dump(all_pages_data, f, ensure_ascii=False, indent=4)
 
 print(f"Scraping and translation completed. Data from {page-1} pages saved to gumtree_ads.json.")

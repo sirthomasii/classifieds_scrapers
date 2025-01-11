@@ -392,7 +392,7 @@ end_time_single = time.time()
 print(f"Chunked single string translation took {end_time_single - start_time_single:.2f} seconds")
 
 # Save the translated data
-with open('./json_dumps/blocket_ads.json', 'w', encoding='utf-8') as f:
+with open('./jsons/blocket_ads.json', 'w', encoding='utf-8') as f:
     json.dump(all_pages_data, f, ensure_ascii=False, indent=4)
 
 print(f"Scraping and translation completed. Data from {page-1} pages saved to blocket_ads.json.")

@@ -8,6 +8,10 @@ import time
 import json
 from deep_translator import GoogleTranslator
 from datetime import datetime, timedelta
+import os
+
+# Change to script directory
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 # Configure Selenium WebDriver (make sure you have ChromeDriver installed)
 options = webdriver.ChromeOptions()
@@ -252,7 +256,7 @@ while not found_yesterday:
                     },
                     'description': description,
                     'main_image': largest_image_url,
-                    'link': link,
+                    'link': "https://www.gumtree.com"+link,
                     'price': price,
                     'timestamp': timestamp.isoformat() if timestamp else None,
                 })
@@ -285,7 +289,7 @@ while not found_yesterday:
     page += 1
     
     # Add a safety limit to prevent infinite loops
-    if page > 40:  # Adjust this number as needed
+    if page > 2:  # Adjust this number as needed
         print("Reached maximum page limit, stopping...")
         break
 
@@ -347,7 +351,7 @@ driver.quit()
 # print(f"Chunked single string translation took {end_time_single - start_time_single:.2f} seconds")
 
 # Save the translated data
-with open('./json_dumps/gumtree_ads.json', 'w', encoding='utf-8') as f:
+with open('../next-frontend/public/jsons/gumtree_ads.json', 'w', encoding='utf-8') as f:
     json.dump(all_pages_data, f, ensure_ascii=False, indent=4)
 
 print(f"Scraping and translation completed. Data from {page-1} pages saved to gumtree_ads.json.")
