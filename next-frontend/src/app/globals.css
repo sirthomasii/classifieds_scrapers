@@ -1,0 +1,74 @@
+/* :root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+*/
+body {
+  color: var(--foreground);
+  background-color: rgb(101, 101, 101) !important;
+  font-family: Arial, Helvetica, sans-serif;
+  position: relative;
+  z-index: 1;
+  overflow: hidden; /* Prevent scrollbars from appearing */
+}
+
+/* Animated metallic background */
+@keyframes metallicBackground {
+  0% {
+    background-position: 0% 0%;
+  }
+  50% {
+    background-position: 100% 100%;
+  }
+  100% {
+    background-position: 0% 0%;
+  }
+}
+
+body::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: 
+    linear-gradient(45deg, rgba(209, 209, 209, 0.5), rgba(161, 161, 161, 0.5)),
+    url('/metal-texture.png'); /* Add your texture image here */
+  background-size: 400% 400%, cover; /* Adjust size for both gradient and texture */
+  animation: metallicBackground 10s ease infinite;
+  opacity: 0.2; /* Adjust opacity for subtle effect */
+  z-index: -1; /* Place behind other content */
+}
+
+/* Add Latin Modern Roman font for headings */
+@font-face {
+  font-family: 'Myriad Pro';
+  src: url('https://use.typekit.net/af/2e2357/00000000000000007735e602/30/l?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n4&v=3') format('woff2'),
+       url('https://use.typekit.net/af/2e2357/00000000000000007735e602/30/d?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n4&v=3') format('woff'),
+       url('https://use.typekit.net/af/2e2357/00000000000000007735e602/30/a?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n4&v=3') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Apply the LaTeX-like font to heading tags */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Myriad Pro', sans-serif !important;
+  text-decoration: underline;
+  letter-spacing: .1em;
+  text-align: center;
+}
+
+/* @layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+} */

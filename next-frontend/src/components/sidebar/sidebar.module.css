@@ -1,0 +1,12 @@
+/* Add this CSS to your sidebar.module.css */
+.text {
+  transition: color 0.3s ease, opacity 0.3s ease; /* Transition for color and opacity */
+}
+
+.accordion-control {
+  transition: color 0.3s ease; /* Transition for color */
+}
+
+.accordion-control:hover {
+  color: lightblue; /* Change color on hover */
+}
