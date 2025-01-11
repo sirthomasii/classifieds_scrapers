@@ -5,123 +5,173 @@ import qs from 'qs';
 import { Publication } from '../types/publication';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MarketplaceData } from '../../types/marketplace';
+import styles from './viewport.module.css';
 
 interface ViewportProps {
   marketplaceData: MarketplaceData | undefined;
   selectedCategory: string | null;
+  selectedMarketplace: string;
 }
 
 export function Viewport({
   marketplaceData,
-  selectedCategory
+  selectedCategory,
+  selectedMarketplace
 }: ViewportProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const itemsPerPage = 12;
 
+  console.log('Raw marketplaceData:', marketplaceData); // Debug log
+
   const filteredData = selectedCategory ? 
     (marketplaceData?.[selectedCategory] ?? []) :
-    Object.values(marketplaceData ?? {}).flat();
+    (marketplaceData?.all ?? []);
 
-  const searchedData = filteredData.filter(item => 
-    item.title?.english?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.title?.original?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  console.log('Filtered data before search:', filteredData); // Debug log
+
+  const searchedData = searchQuery 
+    ? filteredData.filter(item => {
+        const englishTitle = item.title?.english?.toLowerCase() || '';
+        const originalTitle = item.title?.original?.toLowerCase() || '';
+        const searchTerm = searchQuery.toLowerCase();
+        return englishTitle.includes(searchTerm) || originalTitle.includes(searchTerm);
+      })
+    : filteredData;
+
+  // Reset to page 1 when search query, category, or marketplace changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedCategory, selectedMarketplace]);
 
   const totalPages = Math.ceil(searchedData.length / itemsPerPage);
+  
+  // Ensure current page is valid
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(1);
+    }
+  }, [totalPages]);
+
   const displayedItems = searchedData.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
 
+  console.log('Displayed items:', displayedItems.map(item => ({
+    title: item.title,
+    link: item.link,
+    image: item.main_image
+  })));
+
   return (
     <Box p="md" style={{ maxHeight: '100vh', overflowY: 'auto' }}>
-      <AnimatePresence mode="wait">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.3 }}
-        >
-          <Group justify="apart" mb="md">
-            <Text size="xl" fw={700} color="white">
-              {selectedCategory ? `Category: ${selectedCategory}` : 'All Items'}
-            </Text>
-            <TextInput
-              placeholder="Search items..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.currentTarget.value)}
-              style={{ width: 300 }}
-            />
-          </Group>
-          
-          <Group gap="md" align="stretch" component="div">
-            {displayedItems.map((item, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
-              >
-                <Card 
-                  shadow="sm" 
-                  padding="lg" 
-                  style={{ 
-                    width: 250,
-                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                    backdropFilter: 'blur(10px)',
-                    color: 'white'
-                  }}
-                >
-                  {item.main_image && (
-                    <Card.Section>
-                      <img
-                        src={item.main_image}
-                        alt={item.title?.english || 'Product image'}
-                        style={{ 
-                          width: '100%', 
-                          height: 150, 
-                          objectFit: 'cover'
-                        }}
-                      />
-                    </Card.Section>
-                  )}
-                  <Text fw={500} size="lg" mt="md">
-                    {item.title?.english || item.title?.original}
-                  </Text>
-                  <Text size="sm" color="dimmed" mt="xs">
-                    {item.price}
-                  </Text>
-                  {item.link && (
-                    <Text 
-                      component="a" 
-                      href={item.link} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      color="blue" 
-                      size="sm" 
-                      mt="xs"
-                    >
-                      View Details
-                    </Text>
-                  )}
-                </Card>
-              </motion.div>
-            ))}
-          </Group>
-          
-          {totalPages > 1 && (
-            <Group justify="center" mt="xl">
-              <Pagination
-                total={totalPages}
-                value={currentPage}
-                onChange={setCurrentPage}
-                color="violet"
+      <div style={{ color: 'white', marginBottom: '20px' }}>
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search..."
+          style={{
+            padding: '8px',
+            marginBottom: '10px',
+            width: '200px',
+            borderRadius: '4px',
+            border: '1px solid #666',
+            background: 'rgba(255, 255, 255, 0.1)',
+            color: 'white'
+          }}
+        />
+        <div style={{ fontSize: '14px', marginTop: '5px' }}>
+          Found {searchedData.length} items
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', justifyContent: 'flex-start' }}>
+        {displayedItems.map((item, index) => (
+          <div 
+            key={`${item.link}-${index}`}
+            className={styles.itemCard}
+            onClick={() => item.link && window.open(item.link, '_blank')}
+          >
+            {item.main_image && (
+              <img 
+                src={item.main_image} 
+                alt={item.title?.english || item.title?.original || 'Product image'}
+                style={{
+                  width: '100%',
+                  height: '180px',
+                  objectFit: 'cover',
+                  borderRadius: '4px'
+                }}
               />
-            </Group>
-          )}
-        </motion.div>
-      </AnimatePresence>
+            )}
+            <div style={{ padding: '10px 0' }}>
+              <div style={{ 
+                fontSize: '16px', 
+                fontWeight: 'bold',
+                marginBottom: '8px'
+              }}>
+                {item.title?.english || item.title?.original || 'No title'}
+              </div>
+              <div style={{ 
+                fontSize: '14px',
+                color: '#00ff00',
+                marginBottom: '8px'
+              }}>
+                {item.price || 'Price not available'}
+              </div>
+              <div style={{ 
+                fontSize: '12px',
+                color: '#999'
+              }}>
+                From: {item.link?.split('/')[2] || 'Unknown source'}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {totalPages > 1 && (
+        <div style={{ 
+          marginTop: '20px', 
+          color: 'white',
+          display: 'flex',
+          justifyContent: 'center',
+          gap: '10px',
+          padding: '20px 0'
+        }}>
+          <button 
+            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+            disabled={currentPage === 1}
+            style={{
+              padding: '5px 10px',
+              background: currentPage === 1 ? '#444' : '#666',
+              border: 'none',
+              borderRadius: '4px',
+              color: 'white',
+              cursor: currentPage === 1 ? 'default' : 'pointer'
+            }}
+          >
+            Previous
+          </button>
+          <span>Page {currentPage} of {totalPages}</span>
+          <button 
+            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+            disabled={currentPage === totalPages}
+            style={{
+              padding: '5px 10px',
+              background: currentPage === totalPages ? '#444' : '#666',
+              border: 'none',
+              borderRadius: '4px',
+              color: 'white',
+              cursor: currentPage === totalPages ? 'default' : 'pointer'
+            }}
+          >
+            Next
+          </button>
+        </div>
+      )}
     </Box>
   );
 }

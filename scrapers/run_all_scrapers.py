@@ -1,73 +1,68 @@
-import subprocess
-import sys
 import os
-from datetime import datetime
+import importlib.util
+import sys
+from translation_service import TranslationService
 
-# Change to script directory
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
+def load_scraper(file_path):
+    """Dynamically load a Python module from file path"""
+    module_name = os.path.splitext(os.path.basename(file_path))[0]
+    spec = importlib.util.spec_from_file_location(module_name, file_path)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[module_name] = module
+    spec.loader.exec_module(module)
+    return module
 
-def run_scraper(script_name):
-    """Run a scraper script and return success/failure status"""
-    print(f"\n{'='*50}")
-    print(f"Running {script_name} at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    print(f"{'='*50}")
-    
+def run_scraper(scraper_path, max_pages, translation_service):
+    """Run a single scraper with max_pages parameter"""
     try:
-        # Run the script and capture output
-        result = subprocess.run(
-            [sys.executable, script_name],
-            capture_output=True,
-            text=True,
-            timeout=300  # 5 minute timeout
-        )
+        site_name = os.path.basename(scraper_path).replace('_scraper.py', '')
+        print(f"\n=== Starting {site_name} scraper ===")
         
-        # Check if the script completed successfully
-        if result.returncode == 0:
-            # Check if the expected output file was created
-            site_name = script_name.split('_')[0].split('/')[-1]
-            output_file = f'../next-frontend/public/jsons/{site_name}_ads.json'
+        scraper = load_scraper(scraper_path)
+        data = scraper.scrape(max_pages)
+        
+        if not data:
+            print(f"Warning: No data returned from {site_name} scraper")
+            return
             
-            if os.path.exists(output_file):
-                return True, "Success"
-            else:
-                return False, f"Output file {output_file} not created"
-        else:
-            return False, f"Script failed with error:\n{result.stderr}"
-            
-    except subprocess.TimeoutExpired:
-        return False, "Timed out after 5 minutes"
+        # Skip translation for gumtree
+        if 'gumtree' not in site_name.lower():
+            translation_service.add_to_queue(site_name, data)
+        print(f"=== Completed scraping for {site_name} ===\n")
+        
     except Exception as e:
-        return False, f"Failed to run script: {str(e)}"
+        print(f"Error in {site_name} scraper: {str(e)}")
+        import traceback
+        traceback.print_exc()
 
 def main():
-    # List of scrapers to run
-    scrapers = [
-        "scrapers/blocket_scraper.py",
-        "scrapers/gumtree_scraper.py",
-        "scrapers/kleinanzeigen_scraper.py"
+    # Get the directory containing the scrapers
+    scrapers_dir = os.path.dirname(os.path.abspath(__file__))
+    max_pages = int(sys.argv[1]) if len(sys.argv) > 1 else 3
+
+    # Find all Python files containing "scraper" in the name, excluding leboncoin
+    scraper_files = [
+        os.path.join(scrapers_dir, f) 
+        for f in os.listdir(scrapers_dir)
+        if f.endswith('.py') 
+        and 'scraper' in f.lower() 
+        and 'leboncoin' not in f.lower()
+        and f != 'run_all_scrapers.py'
     ]
-    
-    # Store results
-    results = {}
-    
-    # Run each scraper
-    for scraper in scrapers:
-        success, message = run_scraper(scraper)
-        results[scraper] = {
-            'status': 'Success' if success else 'Failed',
-            'message': message
-        }
-    
-    # Print summary
-    print("\n" + "="*50)
-    print("SCRAPING SUMMARY")
-    print("="*50)
-    
-    for scraper, result in results.items():
-        print(f"\n{os.path.basename(scraper)}:")
-        print(f"Status: {result['status']}")
-        if result['status'] == 'Failed':
-            print(f"Error: {result['message']}")
+
+    print(f"Found scrapers: {[os.path.basename(f) for f in scraper_files]}")
+    print(f"Running with max_pages={max_pages}")
+
+    # Initialize translation service
+    translation_service = TranslationService()
+    translation_service.start()
+
+    # Run scrapers sequentially
+    for scraper_path in scraper_files:
+        run_scraper(scraper_path, max_pages, translation_service)
+
+    # Stop translation service and wait for completion
+    translation_service.stop()
 
 if __name__ == "__main__":
     main()

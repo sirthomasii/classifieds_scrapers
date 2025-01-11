@@ -6,7 +6,6 @@ from selenium.webdriver.support import expected_conditions as EC
 from bs4 import BeautifulSoup
 import time
 import json
-from deep_translator import GoogleTranslator
 from datetime import datetime, timedelta
 import os
 
@@ -66,8 +65,6 @@ except Exception as e:
 # Initialize dictionary to store data by page
 all_pages_data = {}
 
-# Initialize translator
-translator = GoogleTranslator(source='auto', target='en')
 
 def scroll_gradually(driver, pause_time=0.125):
     """Scroll until no new content loads"""
@@ -178,180 +175,127 @@ def parse_time_text(time_text):
     
     return None
 
-# Remove the PAGES_TO_SCRAPE constant as we'll now use dynamic stopping
-found_yesterday = False
-page = 1
+def scrape(max_pages=2):
+    found_yesterday = False
+    page = 1
+    
+    while not found_yesterday:
+        page_url = f"{main_url}page{page}" if page > 1 else main_url
+        
+        print(f"Scraping {page_url}...")
+        
+        # Get the page and wait for initial content
+        driver.get(page_url)
+        
+        # Handle cookie popup before proceeding (but don't stop if it fails)
+        if page == 1:  # Only try this on first page
+            accept_cookies(driver)
+        
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.TAG_NAME, "article"))
+        )
+        
+        # Continue with scrolling...
+        scroll_gradually(driver)
+        
+        page_source = driver.page_source
+        page_soup = BeautifulSoup(page_source, 'html.parser')
 
-while not found_yesterday:
-    page_url = f"{main_url}page{page}" if page > 1 else main_url
-    
-    print(f"Scraping {page_url}...")
-    
-    # Get the page and wait for initial content
-    driver.get(page_url)
-    
-    # Handle cookie popup before proceeding (but don't stop if it fails)
-    if page == 1:  # Only try this on first page
-        accept_cookies(driver)
-    
-    WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.TAG_NAME, "article"))
-    )
-    
-    # Continue with scrolling...
-    scroll_gradually(driver)
-    
-    page_source = driver.page_source
-    page_soup = BeautifulSoup(page_source, 'html.parser')
+        # Extract all ad URLs, titles, and images
+        page_data_list = []
+        articles = page_soup.find_all('article')
+        for article in articles:
+            try:
+                # Check if ad is featured
+                featured_div = article.find('div', string='Featured')
+                is_featured = featured_div is not None
+                
+                # Add time extraction
+                time_container = article.find('div', attrs={'data-q': 'tile-datePosted'})
+                time_text = time_container.get_text(strip=True) if time_container else None
+                timestamp = parse_time_text(time_text) if time_text else None
+                
+                # Only set found_yesterday if the ad is not featured
+                if time_text and 'yesterday' in time_text.lower() and not is_featured:
+                    found_yesterday = True
 
-    # Extract all ad URLs, titles, and images
-    page_data_list = []
-    articles = page_soup.find_all('article')
-    for article in articles:
-        try:
-            # Check if ad is featured
-            featured_div = article.find('div', string='Featured')
-            is_featured = featured_div is not None
-            
-            # Add time extraction
-            time_container = article.find('div', attrs={'data-q': 'tile-datePosted'})
-            time_text = time_container.get_text(strip=True) if time_container else None
-            timestamp = parse_time_text(time_text) if time_text else None
-            
-            # Only set found_yesterday if the ad is not featured
-            if time_text and 'yesterday' in time_text.lower() and not is_featured:
-                found_yesterday = True
-
-            # Get link
-            link_elem = article.find('a', attrs={'data-q': 'search-result-anchor'})
-            link = link_elem.get('href') if link_elem else None
-            
-            # Get title and translate it
-            title_container = article.find('div', attrs={'data-q': 'tile-title'})
-            title = title_container.get_text(strip=True) if title_container else None
-            
-            # Get description
-            description_container = article.find('div', attrs={'data-q': 'tile-description'})
-            description = description_container.find('p').get_text(strip=True) if description_container else None
+                # Get link
+                link_elem = article.find('a', attrs={'data-q': 'search-result-anchor'})
+                link = link_elem.get('href') if link_elem else None
+                
+                # Get title and translate it
+                title_container = article.find('div', attrs={'data-q': 'tile-title'})
+                title = title_container.get_text(strip=True) if title_container else None
+                
+                # Get description
+                description_container = article.find('div', attrs={'data-q': 'tile-description'})
+                description = description_container.find('p').get_text(strip=True) if description_container else None
                         
-            # Get price from Price__StyledPrice
-            price_container = article.find('div', attrs={'data-q': 'tile-price'})
-            price = price_container.get_text(strip=True) if price_container else None
-            
-            # Get image from figure tag
-            figure = article.find('figure', class_='listing-tile-thumbnail-image')
-            if figure:
-                img = figure.find('img')
-                largest_image_url = img.get('data-src') or img.get('src') if img else None
-            else:
-                print("No figure tag found")
-                largest_image_url = None
+                # Get price from Price__StyledPrice
+                price_container = article.find('div', attrs={'data-q': 'tile-price'})
+                price = price_container.get_text(strip=True) if price_container else None
+                
+                # Get image from figure tag
+                figure = article.find('figure', class_='listing-tile-thumbnail-image')
+                if figure:
+                    img = figure.find('img')
+                    largest_image_url = img.get('data-src') or img.get('src') if img else None
+                else:
+                    print("No figure tag found")
+                    largest_image_url = None
 
-            # print(f"Largest image URL: {largest_image_url}")
-            if not is_featured:
-                page_data_list.append({
-                    'title': {
-                        'original': title,
-                        'english': title,
-                    },
-                    'description': description,
-                    'main_image': largest_image_url,
-                    'link': "https://www.gumtree.com"+link,
-                    'price': price,
-                    'timestamp': timestamp.isoformat() if timestamp else None,
-                })
-            
-        except Exception as e:
-            print(f"Error extracting data: {e}")
+                # print(f"Largest image URL: {largest_image_url}")
+                if not is_featured:
+                    page_data_list.append({
+                        'title': {
+                            'original': title,
+                            'english': title,
+                        },
+                        'description': description,
+                        'main_image': largest_image_url,
+                        'link': "https://www.gumtree.com"+link,
+                        'price': price,
+                        'timestamp': timestamp.isoformat() if timestamp else None,
+                    })
+                
+            except Exception as e:
+                print(f"Error extracting data: {e}")
 
-    print(f"Found {len(page_data_list)} ads")
-    
-    # Count non-None values for each field
-    title_count = sum(1 for ad in page_data_list if ad['title']['original'])
-    url_count = sum(1 for ad in page_data_list if ad['link'])
-    price_count = sum(1 for ad in page_data_list if ad['price'])
-    image_count = sum(1 for ad in page_data_list if ad['main_image'])
-    
-    print(f"Breakdown of data found:")
-    print(f"- Titles: {title_count}")
-    print(f"- URLs: {url_count}")
-    print(f"- Prices: {price_count}")
-    print(f"- Images: {image_count}")
-    print(f"- Descriptions: {sum(1 for ad in page_data_list if ad['description'])}")
-    print(f"- Timestamps: {sum(1 for ad in page_data_list if ad['timestamp'])}")
+        print(f"Found {len(page_data_list)} ads")
+        
+        # Count non-None values for each field
+        title_count = sum(1 for ad in page_data_list if ad['title']['original'])
+        url_count = sum(1 for ad in page_data_list if ad['link'])
+        price_count = sum(1 for ad in page_data_list if ad['price'])
+        image_count = sum(1 for ad in page_data_list if ad['main_image'])
+        
+        print(f"Breakdown of data found:")
+        print(f"- Titles: {title_count}")
+        print(f"- URLs: {url_count}")
+        print(f"- Prices: {price_count}")
+        print(f"- Images: {image_count}")
+        print(f"- Descriptions: {sum(1 for ad in page_data_list if ad['description'])}")
+        print(f"- Timestamps: {sum(1 for ad in page_data_list if ad['timestamp'])}")
 
-    # Store this page's data in the main dictionary
-    all_pages_data[page] = page_data_list
-    
-    # Optional: Add a small delay between pages to be polite
-    time.sleep(2)
+        # Store this page's data in the main dictionary
+        all_pages_data[page] = page_data_list
+        
+        # Optional: Add a small delay between pages to be polite
+        time.sleep(2)
 
-    page += 1
-    
-    # Add a safety limit to prevent infinite loops
-    if page > 2:  # Adjust this number as needed
-        print("Reached maximum page limit, stopping...")
-        break
+        page += 1
+        
+        if page > max_pages:
+            print(f"Reached maximum page limit ({max_pages}), stopping...")
+            break
 
-# Close the driver
-driver.quit()
 
-# # Translate titles using deep_translator
-# print("Translating titles...")
+    # Save the translated data
+    with open('../next-frontend/public/jsons/gumtree_ads.json', 'w', encoding='utf-8') as f:
+        json.dump(all_pages_data, f, ensure_ascii=False, indent=4)
 
-# # Collect all titles
-# all_titles = []
-# title_map = {}  # To map translated titles back to their ads
+    print(f"Scraping and translation completed. Data from {page-1} pages saved to gumtree_ads.json.")
+    return all_pages_data
 
-# for page_num in all_pages_data:
-#     for ad in all_pages_data[page_num]:
-#         if ad['title']['original']:
-#             all_titles.append(ad['title']['original'])
-#             # Store reference to this ad using its title as key
-#             title_map[ad['title']['original']] = ad
-
-# # Function to split titles into chunks
-# def split_into_chunks(titles, max_length=5000):
-#     chunks = []
-#     current_chunk = []
-#     current_length = 0
-
-#     for title in titles:
-#         title_length = len(title) + 2  # Account for ". " separator
-#         if current_length + title_length > max_length:
-#             chunks.append(current_chunk)
-#             current_chunk = []
-#             current_length = 0
-#         current_chunk.append(title)
-#         current_length += title_length
-
-#     if current_chunk:
-#         chunks.append(current_chunk)
-
-#     return chunks
-
-# # Measure time for chunked single string translation
-# start_time_single = time.time()
-# try:
-#     chunks = split_into_chunks(all_titles)
-#     translated_titles = []
-
-#     for chunk in chunks:
-#         single_string = ". ".join(chunk)
-#         translated_chunk = translator.translate(single_string)
-#         translated_titles.extend(translated_chunk.split(". "))
-
-#     for original, translated in zip(all_titles, translated_titles[:len(all_titles)]):  # Ensure we only use as many translations as we have titles
-#         title_map[original]['title']['english'] = translated
-# except Exception as e:
-#     print(f"Single string translation error: {e}")
-#     for title in all_titles:
-#         title_map[title]['title']['english'] = title
-# end_time_single = time.time()
-# print(f"Chunked single string translation took {end_time_single - start_time_single:.2f} seconds")
-
-# Save the translated data
-with open('../next-frontend/public/jsons/gumtree_ads.json', 'w', encoding='utf-8') as f:
-    json.dump(all_pages_data, f, ensure_ascii=False, indent=4)
-
-print(f"Scraping and translation completed. Data from {page-1} pages saved to gumtree_ads.json.")
+if __name__ == "__main__":
+    scrape()

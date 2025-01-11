@@ -31,6 +31,7 @@ export function MainLayout({ children }: MainLayoutProps) {
     blocket: MarketplaceData;
     gumtree: MarketplaceData;
     kleinanzeigen: MarketplaceData;
+    ricardo: MarketplaceData;
   } | null>(null);
   const [selectedMarketplace, setSelectedMarketplace] = useState<string>('blocket');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -38,20 +39,23 @@ export function MainLayout({ children }: MainLayoutProps) {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [blocketRes, gumtreeRes, kleinanzeigenRes] = await Promise.all([
+        const [blocketRes, ricardoRes, gumtreeRes, kleinanzeigenRes] = await Promise.all([
           fetch('/jsons/blocket_ads.json'),
+          fetch('/jsons/ricardo_ads.json'),
           fetch('/jsons/gumtree_ads.json'),
           fetch('/jsons/kleinanzeigen_ads.json')
         ]);
 
-        const [blocketData, gumtreeData, kleinanzeigenData] = await Promise.all([
+        const [blocketData, ricardoData, gumtreeData, kleinanzeigenData] = await Promise.all([
           blocketRes.json(),
+          ricardoRes.json(),
           gumtreeRes.json(),
           kleinanzeigenRes.json()
         ]);
 
         setMarketplaceData({
           blocket: blocketData,
+          ricardo: ricardoData,
           gumtree: gumtreeData,
           kleinanzeigen: kleinanzeigenData
         });
@@ -136,6 +140,7 @@ export function MainLayout({ children }: MainLayoutProps) {
           <Viewport 
             marketplaceData={getCurrentMarketplaceData()}
             selectedCategory={selectedCategory}
+            selectedMarketplace={selectedMarketplace}
           />
         </Box>
       </Flex>
