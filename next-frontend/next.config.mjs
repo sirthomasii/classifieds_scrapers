@@ -7,15 +7,16 @@ const nextConfig = {
       ...config.resolve.fallback,
       fs: false,
       child_process: false,
-      // other fallbacks if needed
     };
     config.output.webassemblyModuleFilename = 'static/wasm/[modulehash].wasm'
     config.experiments = { ...config.experiments, asyncWebAssembly: true }
-
     return config;
   },
-};
-export default {
+
+  images: {
+    domains: ['i.blocketcdn.se'],
+  },
+
   async rewrites() {
     return [
       {
@@ -25,3 +26,5 @@ export default {
     ];
   },
 };
+
+export default nextConfig;
