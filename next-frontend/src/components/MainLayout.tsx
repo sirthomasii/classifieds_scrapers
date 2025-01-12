@@ -6,6 +6,7 @@ import { IconMenu2 } from '@tabler/icons-react';
 import classes from './MainLayout.module.css';
 import { Viewport } from './viewport/viewport';
 import { Sidebar } from './sidebar/sidebar';
+import { Publication } from '@/types/publication';
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -44,7 +45,7 @@ export function MainLayout({ children, initialMarketplace = 'all', initialCatego
         const response = await fetch('/api/listings');
         const data = await response.json();
 
-        const groupedData = data.reduce((acc: any, item: any) => {
+        const groupedData = data.reduce((acc: Record<string, { all: Array<Publication> }>, item: Publication) => {
           const source = item.source;
           if (!acc[source]) {
             acc[source] = { all: [] };

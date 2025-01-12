@@ -1,7 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Box, Text, Stack, Accordion } from '@mantine/core';
-import axios from 'axios';
-import qs from 'qs';
 import { MarketplaceData } from '../../types/marketplace';
 
 interface SidebarProps {

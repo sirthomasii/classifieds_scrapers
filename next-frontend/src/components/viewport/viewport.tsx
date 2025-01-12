@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { TextInput, Card, Text, Group, Pagination, Box } from '@mantine/core';
 import axios from 'axios';
 import qs from 'qs';
-import { Publication } from '../types/publication';
+import { Publication } from '@/types/publication';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MarketplaceData } from '../../types/marketplace';
+import { MarketplaceData } from '@/types/marketplace';
 import styles from './viewport.module.css';
+import Image from 'next/image';
 
 interface ViewportProps {
   marketplaceData: MarketplaceData | undefined;
@@ -51,7 +52,7 @@ export function Viewport({
     if (currentPage > totalPages && totalPages > 0) {
       setCurrentPage(1);
     }
-  }, [totalPages]);
+  }, [totalPages, currentPage]);
 
   const displayedItems = searchedData.slice(
     (currentPage - 1) * itemsPerPage,
@@ -95,15 +96,12 @@ export function Viewport({
             onClick={() => item.link && window.open(item.link, '_blank')}
           >
             {item.main_image && (
-              <img 
-                src={item.main_image} 
+              <Image
+                src={item.main_image || ''}
                 alt={item.title?.english || item.title?.original || 'Product image'}
-                style={{
-                  width: '100%',
-                  height: '180px',
-                  objectFit: 'cover',
-                  borderRadius: '4px'
-                }}
+                width={250}
+                height={180}
+                style={{ objectFit: 'cover' }}
               />
             )}
             <div style={{ padding: '10px 0' }}>
