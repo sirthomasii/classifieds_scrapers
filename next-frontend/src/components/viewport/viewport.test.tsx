@@ -9,11 +9,9 @@ describe('Viewport', () => {
     render(
       <MantineProvider>
         <Viewport
-          authToken={null}
-          initialPublication={null}
-          identifierFilter={null}
-          categoryFilter={null}
-          onPublicationsChange={() => {}}
+          marketplaceData={undefined}
+          selectedCategory={null}
+          selectedMarketplace="all"
         />
       </MantineProvider>
     );

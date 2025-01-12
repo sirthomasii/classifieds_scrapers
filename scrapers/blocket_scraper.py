@@ -154,11 +154,14 @@ def parse_swedish_time(time_text):
     return None
 
 def scrape(max_pages=2):
-    # Move all the scraping logic inside this function
+    """Scrape Blocket listings"""
+    print(f"\nDEBUG: Blocket scraper starting with max_pages={max_pages}")
     found_yesterday = False
     page = 1
 
-    while not found_yesterday:
+    # while page <= max_pages and not found_yesterday:  # Changed condition to <= instead of >
+    while page <= max_pages:  # Changed condition to <= instead of >
+        # print(f"DEBUG: Scraping page {page} of {max_pages}")
         page_url = f"{main_url}&page={page}" if page > 1 else main_url
         
         print(f"Scraping {page_url}...")
@@ -280,10 +283,10 @@ def scrape(max_pages=2):
 
         page += 1
         
-        # Modified safety limit to use parameter
-        if page > max_pages:
-            print(f"Reached maximum page limit ({max_pages}), stopping...")
-            break
+        # Remove this block as it's redundant with the while condition
+        # if page > max_pages:
+        #     print(f"Reached maximum page limit ({max_pages}), stopping...")
+        #     break
 
     return all_pages_data
 

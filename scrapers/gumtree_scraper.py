@@ -179,7 +179,8 @@ def scrape(max_pages=2):
     found_yesterday = False
     page = 1
     
-    while not found_yesterday:
+    # while page <= max_pages and not found_yesterday:  # Changed condition to <= instead of >
+    while page <= max_pages:  # Changed condition to <= instead of >
         page_url = f"{main_url}page{page}" if page > 1 else main_url
         
         print(f"Scraping {page_url}...")

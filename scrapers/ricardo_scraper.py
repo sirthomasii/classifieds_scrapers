@@ -16,12 +16,12 @@ def init_driver():
     """Initialize and return a new driver instance"""
     chrome_options = uc.ChromeOptions()
     chrome_options.add_argument('--disable-gpu')
-    chrome_options.add_argument("--window-size=1920,1080")
+    chrome_options.add_argument("--window-size=100,100")
     chrome_options.add_argument("--start-maximized")
     chrome_options.add_argument('--disable-extensions')
     chrome_options.add_argument('--disable-notifications')
     chrome_options.add_argument('--disable-popup-blocking')
-    chrome_options.add_argument('--window-position=-32000,-32000')
+    # chrome_options.add_argument('--window-position=-32000,-32000')
     
     # Create the driver with a timeout
     driver = uc.Chrome(
@@ -72,37 +72,82 @@ def scrape(max_pages=2):
             all_pages_data = {}
 
 
-            def scroll_gradually(driver, pause_time=0.125):
-                """Scroll until no new content loads"""
-                # Initial wait for first batch of content
-                time.sleep(pause_time)
+            def get_largest_image_url(article):
+                """Extract the largest available image URL from an article"""
+                # Look for all possible image sources
+                all_images = article.find_all(['img', 'div'])
                 
-                # Get initial height
-                last_height = driver.execute_script("return document.documentElement.scrollHeight")
-                
-                # Set a maximum number of scroll attempts
-                max_attempts = 30
-                attempts = 0
-                
-                while attempts < max_attempts:
-                    # Scroll down by viewport height
-                    driver.execute_script("window.scrollBy(0, window.innerHeight);")
-                    
-                    # Wait for potential new content
-                    time.sleep(pause_time)
-                    
-                    # Calculate new scroll height
-                    new_height = driver.execute_script("return document.documentElement.scrollHeight")
-                    
-                    # Break if no new content (heights equal)
-                    if new_height == last_height:
-                        break
+                for element in all_images:
+                    # Check regular image sources
+                    if element.name == 'img':
+                        src = element.get('src', '')
+                        data_src = element.get('data-src', '')
                         
-                    last_height = new_height
-                    attempts += 1
+                        # Skip money-guard and placeholder images
+                        if any(skip in (src + data_src).lower() for skip in ['money-guard', 'placeholder', 'default']):
+                            continue
+                            
+                        # Check if it's a product image URL
+                        if any(pattern in (src + data_src).lower() for pattern in ['ricardostatic', '/images/', 't_265x200']):
+                            return src or data_src
+                    
+                    # Check background images
+                    elif element.name == 'div':
+                        style = element.get('style', '')
+                        if 'background' in style and 'url(' in style:
+                            bg_url = style[style.find('url(') + 4:style.find(')')]
+                            if any(pattern in bg_url.lower() for pattern in ['ricardostatic', '/images/', 't_265x200']):
+                                return bg_url.strip('"\'')
                 
-                # Scroll back to top
-                driver.execute_script("window.scrollTo(0, 0);")
+                return None
+
+            def scroll_gradually(driver, pause_time=0.25):
+                """Scroll gradually and ensure images are loaded"""
+                print("\nDEBUG: Starting scroll_gradually...")
+                
+                # Initial longer wait for page to stabilize
+                time.sleep(pause_time * 2)
+                
+                # Get scroll height
+                total_height = driver.execute_script("return document.body.scrollHeight")
+                
+                # More robust image loading script
+                driver.execute_script(r"""
+                    window.forceLoadImages = function() {
+                        let loaded = 0;
+                        const images = document.querySelectorAll('img[data-src], img[loading="lazy"]');
+                        images.forEach(img => {
+                            if (img.dataset.src && !img.src.includes(img.dataset.src)) {
+                                img.src = img.dataset.src;
+                                loaded++;
+                            }
+                            if (img.loading === 'lazy') {
+                                img.loading = 'eager';
+                                loaded++;
+                            }
+                        });
+                        return loaded;
+                    };
+                """)
+                
+                # Scroll in smaller increments
+                current_height = 0
+                scroll_step = min(500, total_height / 20)
+                
+                while current_height < total_height:
+                    driver.execute_script(f"window.scrollTo(0, {current_height});")
+                    current_height += scroll_step
+                    time.sleep(0.5)
+                    
+                    num_images = driver.execute_script("return window.forceLoadImages();")
+                    if num_images > 0:
+                        time.sleep(0.5)
+                
+                # Final scroll to bottom and pause
+                driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+                time.sleep(pause_time * 2)
+                
+                print("DEBUG: Finished scrolling")
 
             def accept_cookies(driver):
                 """Find and click the accept cookies button"""
@@ -160,7 +205,8 @@ def scrape(max_pages=2):
             found_yesterday = False
             page = 1
 
-            while not found_yesterday:
+            # while page <= max_pages and not found_yesterday:  # Changed condition to <= instead of >
+            while page <= max_pages:  # Changed condition to <= instead of >
                 try:
                     page_url = f"{main_url}?page={page}" if page > 1 else main_url
                     print(f"Scraping {page_url}...")
@@ -178,14 +224,48 @@ def scrape(max_pages=2):
                     # Continue with scrolling...
                     scroll_gradually(driver)
                     
+                    # Get page source and parse with BeautifulSoup
                     page_source = driver.page_source
                     page_soup = BeautifulSoup(page_source, 'html.parser')
 
                     # Extract all ad URLs, titles, and images
                     page_data_list = []
                     articles = page_soup.find_all('a', class_=lambda x: x and 'style_link' in x)
-                    for article in articles:
+                    # print(f"\nDEBUG: Found {len(articles)} total articles")
+
+                    for idx, article in enumerate(articles):
                         try:
+                            # Get the main product image container
+                            img_containers = article.find_all('img', class_='MuiBox-root')
+                            
+                            # print(f"\nDEBUG: Article {idx + 1}:")
+                            # print(f"- Number of img containers found: {len(img_containers)}")
+                            
+                            # Print details of the first image container if any exist
+                            if img_containers:
+                                first_img = img_containers[0]
+                                # print(f"- First image src: {first_img.get('src', 'No src')}")
+                                # print(f"- First image class: {first_img.get('class', 'No class')}")
+                            else:
+                                print("- No image containers found")
+                            
+                            # Original image extraction logic with debug
+                            largest_image_url = None
+                            for img in img_containers:
+                                img_src = img.get('src', '')
+                                if (img_src and 
+                                    'img.ricardostatic.ch' in img_src and 
+                                    'money-guard' not in img_src and 
+                                    'ai-icon' not in img_src):
+                                    largest_image_url = img_src
+                                    break
+                            
+                            # print(f"- Final selected image URL: {largest_image_url}")
+                            
+                            # if not largest_image_url:
+                            #     # If no image found, let's see the article's HTML
+                            #     print(f"- Article HTML snippet: {article.prettify()[:200]}...")
+
                             # Check if ad is featured
                             featured_div = article.find('div', string='Featured')
                             is_featured = featured_div is not None
@@ -217,20 +297,6 @@ def scrape(max_pages=2):
                                 # Clean up the price text and remove any whitespace
                                 price = price_text.strip()
                             
-                            # Get the main product image container (first one only)
-                            img_containers = article.find_all('div', class_=lambda x: x and 'image' in x)
-                            img_container = img_containers[0] if img_containers else None
-                            all_imgs = img_container.find_all('img') if img_container else []
-                            
-                            # Find first valid image URL
-                            largest_image_url = None
-                            for img in all_imgs:
-                                img_src = img.get('src')
-                                if img_src and 'money-guard' not in img_src and 'ai-icon' not in img_src:
-                                    largest_image_url = img_src
-                                    break
-
-                            # print(f"Largest image URL: {largest_image_url}")
                             if not is_featured:
                                 page_data_list.append({
                                     'title': {
@@ -245,7 +311,7 @@ def scrape(max_pages=2):
                                 })
                             
                         except Exception as e:
-                            print(f"Error extracting data: {e}")
+                            print(f"Error processing article {idx + 1}: {str(e)}")
 
                     print(f"Found {len(page_data_list)} ads")
                     
@@ -290,11 +356,11 @@ def scrape(max_pages=2):
 
         finally:
             # Ensure the driver is properly quit
-            if driver:
-                try:
+            try:
+                if 'driver' in locals():
                     driver.quit()
-                except Exception as e:
-                    print(f"Warning: Driver cleanup issue (this is normal): {e}")
+            except Exception as e:
+                print(f"Warning: Error while closing driver: {e}")
             
     except Exception as e:
         print(f"Error initializing driver: {e}")

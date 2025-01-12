@@ -16,10 +16,10 @@ def run_scraper(scraper_path, max_pages, translation_service):
     """Run a single scraper with max_pages parameter"""
     try:
         site_name = os.path.basename(scraper_path).replace('_scraper.py', '')
-        print(f"\n=== Starting {site_name} scraper ===")
+        print(f"\n=== Starting {site_name} scraper with max_pages={max_pages} ===")
         
         scraper = load_scraper(scraper_path)
-        data = scraper.scrape(max_pages)
+        data = scraper.scrape(max_pages=max_pages)
         
         if not data:
             print(f"Warning: No data returned from {site_name} scraper")
@@ -35,7 +35,7 @@ def run_scraper(scraper_path, max_pages, translation_service):
         import traceback
         traceback.print_exc()
 
-def main(max_pages = 20):
+def main(max_pages = 30):
     # Get the directory containing the scrapers
     scrapers_dir = os.path.dirname(os.path.abspath(__file__))
 

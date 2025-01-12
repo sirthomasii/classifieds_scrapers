@@ -123,9 +123,23 @@ export function Viewport({
               </div>
               <div style={{ 
                 fontSize: '12px',
-                color: '#999'
+                color: '#999',
+                marginBottom: '4px'
               }}>
                 From: {item.link?.split('/')[2] || 'Unknown source'}
+              </div>
+              <div style={{
+                fontSize: '11px',
+                color: '#666',
+                fontStyle: 'italic'
+              }}>
+                {item.timestamp ? new Date(item.timestamp).toLocaleString('en-GB', {
+                  day: 'numeric',
+                  month: 'short',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                }) : 'No date'}
               </div>
             </div>
           </div>
