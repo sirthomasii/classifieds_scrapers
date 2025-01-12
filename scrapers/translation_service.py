@@ -26,21 +26,28 @@ class TranslationService:
         """Add data to translation queue"""
         self.translation_queue.put((site_name, data))
 
-    def _split_into_chunks(self, titles, max_length=5000):
+    def _split_into_chunks(self, titles, max_length=4500):
         """Split titles into chunks for translation"""
         chunks = []
         current_chunk = []
         current_length = 0
+        separator_length = 5  # Length of " ||| "
 
         for title in titles:
-            title_length = len(title) + 2  # Account for ". " separator
+            # Account for title length plus separator
+            title_length = len(title) + separator_length
+            
+            # If adding this title would exceed max_length, start a new chunk
             if current_length + title_length > max_length:
-                chunks.append(current_chunk)
-                current_chunk = []
-                current_length = 0
-            current_chunk.append(title)
-            current_length += title_length
+                if current_chunk:  # Only append if there are items
+                    chunks.append(current_chunk)
+                current_chunk = [title]
+                current_length = title_length
+            else:
+                current_chunk.append(title)
+                current_length += title_length
 
+        # Don't forget the last chunk
         if current_chunk:
             chunks.append(current_chunk)
 
@@ -58,40 +65,38 @@ class TranslationService:
                 site_name, data = item
                 print(f"Translating titles for {site_name}...")
 
-                # Collect all titles and their references
-                all_titles = []
-                title_map = {}  # Maps original titles to their locations in data
+                # Collect all titles with their references
+                translations_needed = []
+                title_refs = []  # Store direct references to title objects
 
                 # Iterate through all pages and ads
-                for page_num in data:
-                    for ad in data[page_num]:
+                for page_data in data.values():
+                    for ad in page_data:
                         if ad['title']['original']:
-                            original_title = ad['title']['original']
-                            all_titles.append(original_title)
-                            title_map[original_title] = ad['title']  # Store reference to title dict
+                            translations_needed.append(ad['title']['original'])
+                            title_refs.append(ad['title'])  # Store reference to the title dict
 
-                if all_titles:
+                if translations_needed:
                     # Split titles into chunks and translate
-                    chunks = self._split_into_chunks(all_titles)
+                    chunks = self._split_into_chunks(translations_needed)
+                    translated_titles = []
+
                     for chunk in chunks:
                         try:
-                            # Join titles with separator and translate
-                            chunk_text = ". ".join(chunk)
+                            # Use a unique separator that won't appear in titles
+                            separator = " @# "
+                            chunk_text = separator.join(chunk)
                             translated_chunk = self.translator.translate(chunk_text)
                             
-                            # Split back into individual titles
-                            translated_titles = translated_chunk.split(". ")
-                            
-                            # Update original ads with translations
-                            for original, translated in zip(chunk, translated_titles):
-                                if original in title_map:
-                                    title_map[original]['english'] = translated
+                            # Split back using the unique separator
+                            translated_titles.extend(translated_chunk.split(separator))
                         except Exception as e:
                             print(f"Translation error for chunk: {e}")
-                            # If translation fails, use original text
-                            for original in chunk:
-                                if original in title_map:
-                                    title_map[original]['english'] = original
+                            translated_titles.extend(chunk)
+
+                    # Update original data structure using direct references
+                    for title_obj, translation in zip(title_refs, translated_titles):
+                        title_obj['english'] = translation
 
                     # Save the translated data
                     output_path = f'../next-frontend/public/jsons/{site_name}_ads.json'

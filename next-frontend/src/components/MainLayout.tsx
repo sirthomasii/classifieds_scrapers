@@ -9,6 +9,8 @@ import { Sidebar } from './sidebar/sidebar';
 
 interface MainLayoutProps {
   children: React.ReactNode;
+  initialMarketplace?: string;
+  initialCategory?: string | null;
 }
 
 interface MarketplaceData {
@@ -25,7 +27,7 @@ interface MarketplaceData {
   }>;
 }
 
-export function MainLayout({ children }: MainLayoutProps) {
+export function MainLayout({ children, initialMarketplace = 'all', initialCategory = null }: MainLayoutProps) {
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
   const [marketplaceData, setMarketplaceData] = useState<{
     blocket: MarketplaceData;
@@ -33,8 +35,8 @@ export function MainLayout({ children }: MainLayoutProps) {
     kleinanzeigen: MarketplaceData;
     ricardo: MarketplaceData;
   } | null>(null);
-  const [selectedMarketplace, setSelectedMarketplace] = useState<string>('blocket');
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedMarketplace, setSelectedMarketplace] = useState(initialMarketplace);
+  const [selectedCategory, setSelectedCategory] = useState(initialCategory);
 
   useEffect(() => {
     const fetchData = async () => {

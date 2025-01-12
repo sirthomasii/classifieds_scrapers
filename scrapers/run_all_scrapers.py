@@ -35,10 +35,9 @@ def run_scraper(scraper_path, max_pages, translation_service):
         import traceback
         traceback.print_exc()
 
-def main():
+def main(max_pages = 20):
     # Get the directory containing the scrapers
     scrapers_dir = os.path.dirname(os.path.abspath(__file__))
-    max_pages = int(sys.argv[1]) if len(sys.argv) > 1 else 3
 
     # Find all Python files containing "scraper" in the name, excluding leboncoin
     scraper_files = [
