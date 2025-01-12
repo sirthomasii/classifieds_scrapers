@@ -41,26 +41,19 @@ export function MainLayout({ children, initialMarketplace = 'all', initialCatego
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [blocketRes, ricardoRes, gumtreeRes, kleinanzeigenRes] = await Promise.all([
-          fetch('/jsons/blocket_ads.json'),
-          fetch('/jsons/ricardo_ads.json'),
-          fetch('/jsons/gumtree_ads.json'),
-          fetch('/jsons/kleinanzeigen_ads.json')
-        ]);
+        const response = await fetch('/api/listings');
+        const data = await response.json();
 
-        const [blocketData, ricardoData, gumtreeData, kleinanzeigenData] = await Promise.all([
-          blocketRes.json(),
-          ricardoRes.json(),
-          gumtreeRes.json(),
-          kleinanzeigenRes.json()
-        ]);
+        const groupedData = data.reduce((acc: any, item: any) => {
+          const source = item.source;
+          if (!acc[source]) {
+            acc[source] = { all: [] };
+          }
+          acc[source].all.push(item);
+          return acc;
+        }, {});
 
-        setMarketplaceData({
-          blocket: blocketData,
-          ricardo: ricardoData,
-          gumtree: gumtreeData,
-          kleinanzeigen: kleinanzeigenData
-        });
+        setMarketplaceData(groupedData);
       } catch (error) {
         console.error('Error fetching data:', error);
       }
@@ -74,26 +67,24 @@ export function MainLayout({ children, initialMarketplace = 'all', initialCatego
   };
 
   const getCurrentMarketplaceData = (): MarketplaceData | undefined => {
-    if (!marketplaceData) return undefined;
+    if (!marketplaceData) return { all: [] };
     
     if (selectedMarketplace === 'all') {
       // Merge all items from all marketplaces
-      return Object.values(marketplaceData).reduce((acc, marketplace) => {
-        // Merge all pages into a single array
-        const allItems = Object.values(marketplace).flat();
-        // Add to accumulator
-        if (allItems.length > 0) {
-          acc['all'] = acc['all'] ? [...acc['all'], ...allItems] : allItems;
+      const mergedData: MarketplaceData = { all: [] };
+      
+      Object.values(marketplaceData).forEach(marketplace => {
+        if (marketplace.all && Array.isArray(marketplace.all)) {
+          mergedData.all = [...mergedData.all, ...marketplace.all];
         }
-        return acc;
-      }, {} as MarketplaceData);
+      });
+      
+      return mergedData;
     }
 
-    // For single marketplace, just merge all pages into a single array
+    // For single marketplace
     const currentMarketplace = marketplaceData[selectedMarketplace as keyof typeof marketplaceData];
-    return {
-      'all': Object.values(currentMarketplace).flat()
-    };
+    return currentMarketplace ? { all: currentMarketplace.all || [] } : { all: [] };
   };
 
   return (

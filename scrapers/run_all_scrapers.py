@@ -2,6 +2,7 @@ import os
 import importlib.util
 import sys
 from translation_service import TranslationService
+import subprocess
 
 def load_scraper(file_path):
     """Dynamically load a Python module from file path"""
@@ -35,7 +36,7 @@ def run_scraper(scraper_path, max_pages, translation_service):
         import traceback
         traceback.print_exc()
 
-def main(max_pages = 30):
+def main(max_pages = 3):
     # Get the directory containing the scrapers
     scrapers_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -62,6 +63,11 @@ def main(max_pages = 30):
 
     # Stop translation service and wait for completion
     translation_service.stop()
+
+    # Call the upload service to upload translated JSONs to MongoDB
+    print("Uploading translated JSONs to MongoDB...")
+    subprocess.run(["python", "upload_service.py"])
+    print("Upload completed.")
 
 if __name__ == "__main__":
     main()

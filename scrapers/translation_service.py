@@ -3,6 +3,7 @@ import json
 import time
 from queue import Queue
 import threading
+from pymongo import MongoClient
 
 class TranslationService:
     def __init__(self):
@@ -98,13 +99,25 @@ class TranslationService:
                     for title_obj, translation in zip(title_refs, translated_titles):
                         title_obj['english'] = translation
 
-                    # Save the translated data
-                    output_path = f'../next-frontend/public/jsons/{site_name}_ads.json'
-                    print(f"Saving translated data to {output_path}")
-                    with open(output_path, 'w', encoding='utf-8') as f:
-                        json.dump(data, f, ensure_ascii=False, indent=4)
+                    # Handle the translated data
+                    self._handle_translated_data(site_name, data)
 
             except Exception as e:
                 print(f"Error in translation worker: {e}")
             finally:
                 self.translation_queue.task_done()
+
+    def _handle_translated_data(self, site_name, translated_data):
+        """Handle the translated data by uploading it to MongoDB"""
+        self._upload_to_mongo(site_name, translated_data)
+
+    def _upload_to_mongo(self, site_name, data):
+        """Upload translated data to MongoDB"""
+        client = MongoClient("mongodb+srv://sirthomasii:ujvkc8W1eeYP9axW@fleatronics-1.lppod.mongodb.net/?retryWrites=true&w=majority&appName=fleatronics-1")
+        db = client['fleatronics']
+        collection = db['listings']
+
+        all_listings = [item for page in data.values() for item in page]
+        if all_listings:
+            collection.insert_many(all_listings)
+            print(f"Successfully inserted {len(all_listings)} listings from {site_name} into MongoDB")

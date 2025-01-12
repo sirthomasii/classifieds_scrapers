@@ -8,6 +8,7 @@ import time
 import json
 from datetime import datetime, timedelta
 import os
+from pymongo import MongoClient
 
 # Change to script directory
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
@@ -262,19 +263,6 @@ def scrape(max_pages=2):
 
         print(f"Found {len(page_data_list)} ads")
         
-        # Count non-None values for each field
-        title_count = sum(1 for ad in page_data_list if ad['title']['original'])
-        url_count = sum(1 for ad in page_data_list if ad['link'])
-        price_count = sum(1 for ad in page_data_list if ad['price'])
-        image_count = sum(1 for ad in page_data_list if ad['main_image'])
-        
-        print(f"Breakdown of data found:")
-        print(f"- Titles: {title_count}")
-        print(f"- URLs: {url_count}")
-        print(f"- Prices: {price_count}")
-        print(f"- Images: {image_count}")
-        print(f"- Timestamps: {sum(1 for ad in page_data_list if ad['timestamp'])}")
-
         # Store this page's data in the main dictionary
         all_pages_data[page] = page_data_list
         
@@ -299,14 +287,5 @@ if __name__ == "__main__":
         else:
             print(f"Scraped {len(all_pages_data)} pages of data")
             
-            # Create directory if it doesn't exist
-            os.makedirs('./jsons', exist_ok=True)
-
-            # Save the translated data
-            output_path = '../next-frontend/public/jsons/blocket_ads.json'
-            with open(output_path, 'w', encoding='utf-8') as f:
-                json.dump(all_pages_data, f, ensure_ascii=False, indent=4)
-            
-            print(f"Data successfully saved to {output_path}")
     finally:
         driver.quit()  # Always close the browser

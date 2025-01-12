@@ -284,6 +284,20 @@ def scrape(max_pages=2):
 
                     print(f"Found {len(page_data_list)} ads")
                     
+                    # Count non-None values for each field
+                    title_count = sum(1 for ad in page_data_list if ad['title']['original'])
+                    url_count = sum(1 for ad in page_data_list if ad['link'])
+                    price_count = sum(1 for ad in page_data_list if ad['price'])
+                    image_count = sum(1 for ad in page_data_list if ad['main_image'])
+                    
+                    print(f"Breakdown of data found:")
+                    print(f"- Titles: {title_count}")
+                    print(f"- URLs: {url_count}")
+                    print(f"- Prices: {price_count}")
+                    print(f"- Images: {image_count}")
+                    print(f"- Descriptions: {sum(1 for ad in page_data_list if ad['description'])}")
+                    print(f"- Timestamps: {sum(1 for ad in page_data_list if ad['timestamp'])}")
+
                     # Store this page's data in the main dictionary
                     all_pages_data[page] = page_data_list
                     

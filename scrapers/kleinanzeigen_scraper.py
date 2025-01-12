@@ -8,6 +8,7 @@ import time
 import json
 from datetime import datetime, timedelta
 import os
+from pymongo import MongoClient
 
 # Change to script directory
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
@@ -239,20 +240,6 @@ def scrape(max_pages=2):
 
         print(f"Found {len(page_data_list)} ads")
         
-        # Count non-None values for each field
-        title_count = sum(1 for ad in page_data_list if ad['title']['original'])
-        url_count = sum(1 for ad in page_data_list if ad['link'])
-        price_count = sum(1 for ad in page_data_list if ad['price'])
-        image_count = sum(1 for ad in page_data_list if ad['main_image'])
-        
-        print(f"Breakdown of data found:")
-        print(f"- Titles: {title_count}")
-        print(f"- URLs: {url_count}")
-        print(f"- Prices: {price_count}")
-        print(f"- Images: {image_count}")
-        print(f"- Descriptions: {sum(1 for ad in page_data_list if ad['description'])}")
-        print(f"- Timestamps: {sum(1 for ad in page_data_list if ad['timestamp'])}")
-
         # Store this page's data in the main dictionary
         all_pages_data[page] = page_data_list
         
@@ -265,16 +252,29 @@ def scrape(max_pages=2):
             print(f"Reached maximum page limit ({max_pages}), stopping...")
             break
 
+    # After scraping
+    current_time = datetime.now().isoformat()
+    for page in all_pages_data.values():
+        for listing in page:
+            listing['source'] = 'kleinanzeigen'
+            listing['scraped_at'] = current_time
 
-    # Ensure the directory exists
-    os.makedirs('../next-frontend/public/json_dumps', exist_ok=True)
-
-    # Save the translated data
-    with open('../next-frontend/public/jsons/kleinanzeigen_ads.json', 'w', encoding='utf-8') as f:
-        json.dump(all_pages_data, f, ensure_ascii=False, indent=4)
-
-    print(f"Scraping and translation completed. Data from {page-1} pages saved to kleinanzeigen_ads.json.")
     return all_pages_data
 
 if __name__ == "__main__":
-    scrape()
+    all_pages_data = scrape()
+    
+    if not all_pages_data:
+        print("Warning: No data was scraped!")
+    else:
+        print(f"Scraped {len(all_pages_data)} pages of data")
+        
+        # Create directory if it doesn't exist
+        os.makedirs('./JSON', exist_ok=True)
+
+        # Save the original data to JSON
+        output_path = './JSON/kleinanzeigen_ads.json'
+        with open(output_path, 'w', encoding='utf-8') as f:
+            json.dump(all_pages_data, f, ensure_ascii=False, indent=4)
+        
+        print(f"Data successfully saved to {output_path}")

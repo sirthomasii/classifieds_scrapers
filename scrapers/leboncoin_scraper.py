@@ -8,6 +8,7 @@ import json
 from deep_translator import GoogleTranslator
 from datetime import datetime, timedelta
 import os
+from pymongo import MongoClient
 
 # Change to script directory
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
@@ -26,6 +27,11 @@ options.add_argument('--disable-popup-blocking')
 try:
     driver = uc.Chrome(options=options)
     
+    # Initialize MongoDB client
+    client = MongoClient("mongodb+srv://sirthomasii:ujvkc8W1eeYP9axW@fleatronics-1.lppod.mongodb.net/?retryWrites=true&w=majority&appName=fleatronics-1")
+    db = client['fleatronics']
+    collection = db['listings']
+
     try:
         # URL to scrape
         main_url = "https://www.leboncoin.fr/recherche?category=14&shippable=1&sort=time"
@@ -318,29 +324,77 @@ try:
                 break
 
         # Translate titles using deep_translator
-        if translator is not None:
-            print("Translating titles...")
-            for page_num in all_pages_data:
-                for ad in all_pages_data[page_num]:
-                    if ad['title']['original']:
-                        try:
-                            translated_title = translator.translate(ad['title']['original'])
-                            ad['title']['english'] = translated_title
-                        except Exception as e:
-                            print(f"Translation error for '{ad['title']['original']}': {e}")
-                            ad['title']['english'] = ad['title']['original']
-                        time.sleep(0.1)
-        else:
-            print("Skipping translation (will be handled by run_all_scrapers.py)")
-            for page_num in all_pages_data:
-                for ad in all_pages_data[page_num]:
-                    ad['title']['english'] = None
+        print("Translating titles...")
 
-        # Save the data
-        with open('../next-frontend/public/jsons/leboncoin_ads.json', 'w', encoding='utf-8') as f:
+        # Collect all titles
+        all_titles = []
+        title_map = {}  # To map translated titles back to their ads
+
+        for page_num in all_pages_data:
+            for ad in all_pages_data[page_num]:
+                if ad['title']['original']:
+                    all_titles.append(ad['title']['original'])
+                    # Store reference to this ad using its title as key
+                    title_map[ad['title']['original']] = ad
+
+        # Function to split titles into chunks
+        def split_into_chunks(titles, max_length=5000):
+            chunks = []
+            current_chunk = []
+            current_length = 0
+
+            for title in titles:
+                title_length = len(title) + 2  # Account for ". " separator
+                if current_length + title_length > max_length:
+                    chunks.append(current_chunk)
+                    current_chunk = []
+                    current_length = 0
+                current_chunk.append(title)
+                current_length += title_length
+
+            if current_chunk:
+                chunks.append(current_chunk)
+
+            return chunks
+
+        # Measure time for chunked single string translation
+        start_time_single = time.time()
+        try:
+            chunks = split_into_chunks(all_titles)
+            translated_titles = []
+
+            for chunk in chunks:
+                single_string = ". ".join(chunk)
+                translated_chunk = translator.translate(single_string)
+                translated_titles.extend(translated_chunk.split(". "))
+
+            for original, translated in zip(all_titles, translated_titles[:len(all_titles)]):  # Ensure we only use as many translations as we have titles
+                title_map[original]['title']['english'] = translated
+        except Exception as e:
+            print(f"Single string translation error: {e}")
+            for title in all_titles:
+                title_map[title]['title']['english'] = title
+        end_time_single = time.time()
+        print(f"Chunked single string translation took {end_time_single - start_time_single:.2f} seconds")
+
+        # Save the translated data
+        with open('./jsons/blocket_ads.json', 'w', encoding='utf-8') as f:
             json.dump(all_pages_data, f, ensure_ascii=False, indent=4)
 
-        print(f"Scraping and translation completed. Data from {page-1} pages saved to leboncoin_ads.json.")
+        print(f"Scraping and translation completed. Data from {page-1} pages saved to blocket_ads.json.")
+
+        # After scraping
+        current_time = datetime.now().isoformat()
+        for page in all_pages_data.values():
+            for listing in page:
+                listing['source'] = 'leboncoin'
+                listing['scraped_at'] = current_time
+
+        # Flatten and insert into MongoDB
+        all_listings = [item for page in all_pages_data.values() for item in page]
+        if all_listings:
+            collection.insert_many(all_listings)
+            print(f"Successfully inserted {len(all_listings)} listings into MongoDB")
 
     finally:
         # Ensure the driver is properly quit
@@ -352,3 +406,25 @@ try:
             
 except Exception as e:
     print(f"Error initializing driver: {e}")
+
+def scrape(max_pages=2):
+    # Remove MongoDB client initialization and insertion
+    return all_pages_data
+
+if __name__ == "__main__":
+    all_pages_data = scrape()
+    
+    if not all_pages_data:
+        print("Warning: No data was scraped!")
+    else:
+        print(f"Scraped {len(all_pages_data)} pages of data")
+        
+        # Create directory if it doesn't exist
+        os.makedirs('./JSON', exist_ok=True)
+
+        # Save the original data to JSON
+        output_path = './JSON/leboncoin_ads.json'
+        with open(output_path, 'w', encoding='utf-8') as f:
+            json.dump(all_pages_data, f, ensure_ascii=False, indent=4)
+        
+        print(f"Data successfully saved to {output_path}")
