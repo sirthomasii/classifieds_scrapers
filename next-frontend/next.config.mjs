@@ -14,7 +14,7 @@ const nextConfig = {
   },
 
   images: {
-    domains: ['i.blocketcdn.se'],
+    domains: ['i.blocketcdn.se', 'imagedelivery.net', 'img.kleinanzeigen.de','img.ricardostatic.ch'],
   },
 
   async rewrites() {
