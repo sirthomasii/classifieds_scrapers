@@ -3,9 +3,6 @@ import { NextResponse } from 'next/server';
 
 const uri = process.env.MONGODB_URI;
 
-export const runtime = 'edge';
-export const maxDuration = 10;
-
 export async function GET() {
   let client;
   try {
