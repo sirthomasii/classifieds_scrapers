@@ -31,6 +31,10 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'img.ricardostatic.ch',
       },
+      {
+        protocol: 'https',
+        hostname: 'frankfurt.apollo.olxcdn.com',
+      },
     ],
   },
 

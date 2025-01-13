@@ -101,7 +101,7 @@ def scroll_gradually(driver, pause_time=0.125):
 def accept_cookies(driver):
     """Find and click the accept cookies button"""
     try:
-        print("Looking for cookie consent button...")
+        # print("Looking for cookie consent button...")
 
         # Wait for the cookie banner to be present
         WebDriverWait(driver, 10).until(
@@ -114,7 +114,7 @@ def accept_cookies(driver):
         # Click the accept button
         accept_button.click()
         
-        print("Clicked accept button")
+        # print("Clicked accept button")
 
         # Wait for the banner to be removed from the DOM
         WebDriverWait(driver, 10).until(

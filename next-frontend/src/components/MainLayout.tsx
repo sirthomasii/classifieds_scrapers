@@ -34,6 +34,7 @@ export function MainLayout({ children, initialMarketplace = 'all', initialCatego
     blocket: MarketplaceData;
     gumtree: MarketplaceData;
     kleinanzeigen: MarketplaceData;
+    olx: MarketplaceData;
     ricardo: MarketplaceData;
   } | null>(null);
   const [selectedMarketplace, setSelectedMarketplace] = useState(initialMarketplace);

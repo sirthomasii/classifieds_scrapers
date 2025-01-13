@@ -7,6 +7,7 @@ interface SidebarProps {
     blocket: MarketplaceData;
     gumtree: MarketplaceData;
     kleinanzeigen: MarketplaceData;
+    olx: MarketplaceData;
     ricardo: MarketplaceData;
   } | null;
   selectedMarketplace: string;
@@ -61,7 +62,7 @@ export function Sidebar({
               All Websites
             </Accordion.Control>
             <Accordion.Panel>
-              {['blocket', 'gumtree', 'kleinanzeigen', 'ricardo'].map((marketplace) => (
+              {['blocket', 'gumtree', 'olx','kleinanzeigen', 'ricardo'].map((marketplace) => (
                 <Text
                   key={marketplace}
                   onClick={() => {
