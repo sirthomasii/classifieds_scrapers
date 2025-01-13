@@ -14,7 +14,24 @@ const nextConfig = {
   },
 
   images: {
-    domains: ['i.blocketcdn.se', 'imagedelivery.net', 'img.kleinanzeigen.de','img.ricardostatic.ch'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'i.blocketcdn.se',
+      },
+      {
+        protocol: 'https',
+        hostname: 'imagedelivery.net',
+      },
+      {
+        protocol: 'https',
+        hostname: 'img.kleinanzeigen.de',
+      },
+      {
+        protocol: 'https',
+        hostname: 'img.ricardostatic.ch',
+      },
+    ],
   },
 
   async rewrites() {
