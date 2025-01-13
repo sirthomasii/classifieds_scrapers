@@ -3,46 +3,39 @@ import { NextResponse } from 'next/server';
 
 const uri = process.env.MONGODB_URI;
 
+export const runtime = 'edge';
+export const maxDuration = 10;
+
 export async function GET() {
   let client;
   try {
     if (!uri) {
-      throw new Error('MongoDB URI not configured');
+      return NextResponse.json({ error: 'MongoDB URI not configured' }, { status: 500 });
     }
 
-    console.log('Connecting to MongoDB...');
     client = new MongoClient(uri, {
-      // Add connection options
-      connectTimeoutMS: 10000, // 10 seconds
-      socketTimeoutMS: 45000,  // 45 seconds
+      connectTimeoutMS: 5000,
+      socketTimeoutMS: 10000,
+      serverSelectionTimeoutMS: 5000,
     });
     
     await client.connect();
-    console.log('Connected successfully');
 
     const db = client.db('fleatronics');
     const listings = await db.collection('listings')
       .find({})
-      .limit(100)  // Limit results to prevent timeout
+      .limit(50)
+      .maxTimeMS(5000)
       .toArray();
-      
-    console.log(`Retrieved ${listings?.length || 0} listings`);
 
-    if (!listings || !Array.isArray(listings)) {
-      return NextResponse.json([], { status: 200 });
-    }
-
-    return NextResponse.json(listings);
+    return NextResponse.json(listings || []);
     
   } catch (error) {
-    console.error('Detailed error:', error);
     return NextResponse.json(
-      { error: `Failed to fetch listings: ${error instanceof Error ? error.message : 'Unknown error'}` },
+      { error: 'Database connection failed' },
       { status: 500 }
     );
   } finally {
-    if (client) {
-      await client?.close();
-    }
+    await client?.close().catch(() => {});
   }
 }
