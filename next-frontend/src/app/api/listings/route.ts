@@ -33,7 +33,7 @@ export async function GET() {
     const db = client.db('fleatronics');
     const listings = await db.collection('listings')
       .find({})
-      .limit(50)
+      // .limit(50)
       .maxTimeMS(5000)
       .toArray();
 

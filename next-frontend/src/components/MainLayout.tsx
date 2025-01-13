@@ -43,17 +43,17 @@ export function MainLayout({ children, initialMarketplace = 'all', initialCatego
     const fetchData = async () => {
       try {
         const response = await fetch('/api/listings');
-        const data = await response.json();
+        const result = await response.json();
 
-        // Ensure data is an array before reducing
-        if (!Array.isArray(data)) {
-          console.error('Data is not an array:', data);
+        // Check if we have data in the expected format
+        if (!result.data || !Array.isArray(result.data)) {
+          console.error('Invalid data format:', result);
           setMarketplaceData(null);
           return;
         }
 
-        const groupedData = data.reduce((acc: Record<string, { all: Array<Publication> }>, item: Publication) => {
-          const source = item.source || 'unknown';
+        const groupedData = result.data.reduce((acc: Record<string, { all: Array<Publication> }>, item: Publication) => {
+          const source = item.source?.toLowerCase() || 'unknown';
           if (!acc[source]) {
             acc[source] = { all: [] };
           }

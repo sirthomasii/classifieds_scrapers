@@ -4,6 +4,9 @@ import time
 from queue import Queue
 import threading
 from pymongo import MongoClient
+from datetime import datetime
+from pymongo.errors import BulkWriteError
+from pymongo import UpdateOne
 
 class TranslationService:
     def __init__(self):
@@ -112,12 +115,47 @@ class TranslationService:
         self._upload_to_mongo(site_name, translated_data)
 
     def _upload_to_mongo(self, site_name, data):
-        """Upload translated data to MongoDB"""
-        client = MongoClient("mongodb+srv://sirthomasii:ujvkc8W1eeYP9axW@fleatronics-1.lppod.mongodb.net/?retryWrites=true&w=majority&appName=fleatronics-1")
-        db = client['fleatronics']
-        collection = db['listings']
+        """Upload translated data to MongoDB with duplicate prevention"""
+        try:
+            client = MongoClient("mongodb+srv://sirthomasii:ujvkc8W1eeYP9axW@fleatronics-1.lppod.mongodb.net/?retryWrites=true&w=majority&appName=fleatronics-1")
+            db = client['fleatronics']
+            collection = db['listings']
 
-        all_listings = [item for page in data.values() for item in page]
-        if all_listings:
-            collection.insert_many(all_listings)
-            print(f"Successfully inserted {len(all_listings)} listings from {site_name} into MongoDB")
+            # Create a unique compound index
+            collection.create_index([
+                ("link", 1),
+                ("source", 1)
+            ], unique=True)
+
+            # Flatten and prepare data for upsert
+            all_listings = []
+            for page in data.values():
+                for item in page:
+                    if item['link']:  # Only process items with valid links
+                        # Create filter for upsert
+                        filter_doc = {
+                            "link": item['link'],
+                            "source": site_name
+                        }
+                        # Add timestamp for tracking updates
+                        item['last_updated'] = datetime.now().isoformat()
+                        
+                        all_listings.append(UpdateOne(
+                            filter_doc,
+                            {'$set': item},
+                            upsert=True
+                        ))
+
+            if all_listings:
+                result = collection.bulk_write(all_listings, ordered=False)
+                print(f"MongoDB update results for {site_name}:")
+                print(f"- Inserted: {result.upserted_count}")
+                print(f"- Modified: {result.modified_count}")
+                print(f"- Matched: {result.matched_count}")
+
+        except BulkWriteError as bwe:
+            print(f"Some upserts failed: {bwe.details}")
+        except Exception as e:
+            print(f"Error uploading to MongoDB: {e}")
+        finally:
+            client.close()

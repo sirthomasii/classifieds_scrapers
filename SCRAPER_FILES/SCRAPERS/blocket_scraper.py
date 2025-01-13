@@ -104,7 +104,7 @@ def scroll_gradually(driver, pause_time=0.125):
 def accept_cookies(driver):
     """Find and click the accept cookies button"""
     try:
-        print("Looking for cookie consent iframe...")
+        # print("Looking for cookie consent iframe...")
         
         # Wait for the iframe to be present
         iframe = WebDriverWait(driver, 10).until(
@@ -113,22 +113,22 @@ def accept_cookies(driver):
         
         # Switch to the iframe context
         driver.switch_to.frame(iframe)
-        print("Switched to iframe context")
+        # print("Switched to iframe context")
         
         # Look for the accept button within the iframe
         try:
             accept_button = WebDriverWait(driver, 5).until(
                 EC.element_to_be_clickable((By.CSS_SELECTOR, "button[title='Godkänn alla cookies']"))
             )
-            print("Found accept button")
+            # print("Found accept button")
             accept_button.click()
-            print("Clicked accept button")
+            # print("Clicked accept button")
         except Exception as e:
             print(f"Failed to find/click accept button: {e}")
         
         # Switch back to default content
         driver.switch_to.default_content()
-        print("Switched back to main context")
+        # print("Switched back to main context")
         
         return True
         

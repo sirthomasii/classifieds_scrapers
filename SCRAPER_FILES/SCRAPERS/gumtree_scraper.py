@@ -102,7 +102,7 @@ def scroll_gradually(driver, pause_time=0.125):
 def accept_cookies(driver):
     """Find and click the accept cookies button"""
     try:
-        print("Looking for cookie consent button...")
+        # print("Looking for cookie consent button...")
         
         # Wait for the cookie banner to be present and visible
         WebDriverWait(driver, 10).until(
@@ -124,7 +124,7 @@ def accept_cookies(driver):
                 accept_button = driver.find_element(By.ID, "onetrust-accept-btn-handler")
                 ActionChains(driver).move_to_element(accept_button).click().perform()
         
-        print("Clicked accept button")
+        # print("Clicked accept button")
         
         # Wait for banner to be hidden (checking CSS visibility)
         WebDriverWait(driver, 10).until(
@@ -180,109 +180,92 @@ def scrape(max_pages=2):
     found_yesterday = False
     page = 1
     
-    # while page <= max_pages and not found_yesterday:  # Changed condition to <= instead of >
-    while page <= max_pages:  # Changed condition to <= instead of >
-        page_url = f"{main_url}page{page}" if page > 1 else main_url
+    while page <= max_pages:
+        page_url = f"{main_url}page{page}/" if page > 1 else main_url
         
         print(f"Scraping {page_url}...")
         
-        # Get the page and wait for initial content
-        driver.get(page_url)
-        
-        # Handle cookie popup before proceeding (but don't stop if it fails)
-        if page == 1:  # Only try this on first page
-            accept_cookies(driver)
-        
-        WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.TAG_NAME, "article"))
-        )
-        
-        # Continue with scrolling...
-        scroll_gradually(driver)
-        
-        page_source = driver.page_source
-        page_soup = BeautifulSoup(page_source, 'html.parser')
+        try:
+            driver.get(page_url)
+            
+            if page == 1:
+                accept_cookies(driver)
+            
+            WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.TAG_NAME, "article"))
+            )
+            
+            scroll_gradually(driver)
+            
+            page_source = driver.page_source
+            page_soup = BeautifulSoup(page_source, 'html.parser')
 
-        # Extract all ad URLs, titles, and images
-        page_data_list = []
-        articles = page_soup.find_all('article')
-        for article in articles:
-            try:
-                # Check if ad is featured
-                featured_div = article.find('div', string='Featured')
-                is_featured = featured_div is not None
-                
-                # Add time extraction
-                time_container = article.find('div', attrs={'data-q': 'tile-datePosted'})
-                time_text = time_container.get_text(strip=True) if time_container else None
-                timestamp = parse_time_text(time_text) if time_text else None
-                
-                # Only set found_yesterday if the ad is not featured
-                if time_text and 'yesterday' in time_text.lower() and not is_featured:
-                    found_yesterday = True
+            page_data_list = []
+            articles = page_soup.find_all('article')
+            
+            for article in articles:
+                try:
+                    # Check if ad is featured
+                    featured_div = article.find('div', string='Featured')
+                    is_featured = featured_div is not None
+                    
+                    # Get link first - we'll use this to skip invalid entries
+                    link_elem = article.find('a', attrs={'data-q': 'search-result-anchor'})
+                    if not link_elem or not link_elem.get('href'):
+                        continue
 
-                # Get link
-                link_elem = article.find('a', attrs={'data-q': 'search-result-anchor'})
-                link = link_elem.get('href') if link_elem else None
-                
-                # Get title and translate it
-                title_container = article.find('div', attrs={'data-q': 'tile-title'})
-                title = title_container.get_text(strip=True) if title_container else None
-                
-                # Get description
-                description_container = article.find('div', attrs={'data-q': 'tile-description'})
-                description = description_container.find('p').get_text(strip=True) if description_container else None
-                        
-                # Get price from Price__StyledPrice
-                price_container = article.find('div', attrs={'data-q': 'tile-price'})
-                price = price_container.get_text(strip=True) if price_container else None
-                
-                # Get image from figure tag
-                figure = article.find('figure', class_='listing-tile-thumbnail-image')
-                if figure:
-                    img = figure.find('img')
-                    largest_image_url = img.get('data-src') or img.get('src') if img else None
-                else:
-                    print("No figure tag found")
+                    link = "https://www.gumtree.com" + link_elem['href']
+                    
+                    # Get title
+                    title_container = article.find('div', attrs={'data-q': 'tile-title'})
+                    title = title_container.get_text(strip=True) if title_container else None
+                    if not title:
+                        continue
+                    
+                    # Get description
+                    description_container = article.find('div', attrs={'data-q': 'tile-description'})
+                    description = description_container.find('p').get_text(strip=True) if description_container else None
+                            
+                    # Get price
+                    price_container = article.find('div', attrs={'data-q': 'tile-price'})
+                    price = price_container.get_text(strip=True) if price_container else None
+                    
+                    # Get image
+                    figure = article.find('figure', class_='listing-tile-thumbnail-image')
                     largest_image_url = None
+                    if figure:
+                        img = figure.find('img')
+                        if img:
+                            largest_image_url = img.get('data-src') or img.get('src')
 
-                # print(f"Largest image URL: {largest_image_url}")
-                if not is_featured:
-                    page_data_list.append({
-                        'title': {
-                            'original': title,
-                            'english': title,
-                        },
-                        'description': description,
-                        'main_image': largest_image_url,
-                        'link': "https://www.gumtree.com"+link,
-                        'price': price,
-                        'timestamp': timestamp.isoformat() if timestamp else None,
-                    })
-                
-            except Exception as e:
-                print(f"Error extracting data: {e}")
+                    if not is_featured:
+                        page_data_list.append({
+                            'title': {
+                                'original': title,
+                                'english': title,
+                            },
+                            'description': description,
+                            'main_image': largest_image_url,
+                            'link': link,
+                            'price': price,
+                            'timestamp': datetime.now().isoformat(),  # Gumtree doesn't show consistent timestamps
+                            'source': 'gumtree',
+                            'scraped_at': datetime.now().isoformat()
+                        })
+                    
+                except Exception as e:
+                    print(f"Error processing article: {e}")
+                    continue
 
-        print(f"Found {len(page_data_list)} ads")
-    
-        # Store this page's data in the main dictionary
-        all_pages_data[page] = page_data_list
-        
-        # Optional: Add a small delay between pages to be polite
-        time.sleep(2)
-
-        page += 1
-        
-        if page > max_pages:
-            print(f"Reached maximum page limit ({max_pages}), stopping...")
+            print(f"Found {len(page_data_list)} ads")
+            all_pages_data[page] = page_data_list
+            
+            time.sleep(2)
+            page += 1
+            
+        except Exception as e:
+            print(f"Error scraping page {page}: {e}")
             break
-
-    # After scraping
-    current_time = datetime.now().isoformat()
-    for page in all_pages_data.values():
-        for listing in page:
-            listing['source'] = 'gumtree'
-            listing['scraped_at'] = current_time
 
     return all_pages_data
 
