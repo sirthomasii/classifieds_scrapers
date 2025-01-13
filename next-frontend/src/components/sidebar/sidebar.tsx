@@ -26,7 +26,27 @@ export function Sidebar({
     <Box p="md">
       <Stack gap="md">
         <Text size="xl" fw={700} color="white">Marketplaces</Text>
-        <Accordion variant="filled">
+        <Accordion 
+          variant="filled"
+          styles={{
+            item: {
+              backgroundColor: '#1A1B1E',
+              borderColor: 'rgba(255, 255, 255, 0.1)',
+            },
+            control: {
+              backgroundColor: '#1A1B1E',
+              '&:hover': {
+                backgroundColor: '#2C2E33'
+              }
+            },
+            panel: {
+              backgroundColor: '#1A1B1E'
+            },
+            chevron: {
+              color: 'white'
+            }
+          }}
+        >
           <Accordion.Item value="all">
             <Accordion.Control 
               onClick={() => {

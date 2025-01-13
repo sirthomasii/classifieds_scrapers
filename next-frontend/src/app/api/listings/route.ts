@@ -4,42 +4,45 @@ import { NextResponse } from 'next/server';
 const uri = process.env.MONGODB_URI;
 
 export async function GET() {
+  let client;
   try {
     if (!uri) {
       throw new Error('MongoDB URI not configured');
     }
 
-    const client = new MongoClient(uri);
+    console.log('Connecting to MongoDB...');
+    client = new MongoClient(uri, {
+      // Add connection options
+      connectTimeoutMS: 10000, // 10 seconds
+      socketTimeoutMS: 45000,  // 45 seconds
+    });
+    
     await client.connect();
+    console.log('Connected successfully');
 
     const db = client.db('fleatronics');
-    const collections = await db.listCollections().toArray();
-    // console.log('Available collections:', collections.map(c => c.name));
+    const listings = await db.collection('listings')
+      .find({})
+      .limit(100)  // Limit results to prevent timeout
+      .toArray();
+      
+    console.log(`Retrieved ${listings?.length || 0} listings`);
 
-    // Check if the 'listings' collection exists
-    if (!collections.some(c => c.name === 'listings')) {
-    //   console.log('Listings collection does not exist.');
+    if (!listings || !Array.isArray(listings)) {
       return NextResponse.json([], { status: 200 });
     }
 
-    const listings = await db.collection('listings').find({}).toArray();
-    // console.log(`Retrieved ${listings.length} listings from database`);
-    
-    await client.close();
-
-    if (!listings || listings.length === 0) {
-      console.log('No listings found in database');
-      return NextResponse.json([], { status: 200 });
-    }
-
-    // console.log('Successfully returning listings');
     return NextResponse.json(listings);
     
   } catch (error) {
-    // console.error('Database error:', error);
+    console.error('Detailed error:', error);
     return NextResponse.json(
       { error: `Failed to fetch listings: ${error instanceof Error ? error.message : 'Unknown error'}` },
       { status: 500 }
     );
+  } finally {
+    if (client) {
+      await client?.close();
+    }
   }
 }
