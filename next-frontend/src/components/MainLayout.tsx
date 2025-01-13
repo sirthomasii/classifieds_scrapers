@@ -45,8 +45,15 @@ export function MainLayout({ children, initialMarketplace = 'all', initialCatego
         const response = await fetch('/api/listings');
         const data = await response.json();
 
+        // Ensure data is an array before reducing
+        if (!Array.isArray(data)) {
+          console.error('Data is not an array:', data);
+          setMarketplaceData(null);
+          return;
+        }
+
         const groupedData = data.reduce((acc: Record<string, { all: Array<Publication> }>, item: Publication) => {
-          const source = item.source;
+          const source = item.source || 'unknown';
           if (!acc[source]) {
             acc[source] = { all: [] };
           }
@@ -57,6 +64,7 @@ export function MainLayout({ children, initialMarketplace = 'all', initialCatego
         setMarketplaceData(groupedData);
       } catch (error) {
         console.error('Error fetching data:', error);
+        setMarketplaceData(null);
       }
     };
 

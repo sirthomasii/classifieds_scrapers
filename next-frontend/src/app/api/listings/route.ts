@@ -7,9 +7,21 @@ export async function GET() {
   let client;
   try {
     if (!uri) {
-      return NextResponse.json({ error: 'MongoDB URI not configured' }, { status: 500 });
+      console.error('MongoDB URI is not configured in environment variables');
+      return NextResponse.json(
+        { error: 'Database configuration error', data: [] },
+        { status: 500 }
+      );
     }
 
+    if (!uri.startsWith('mongodb')) {
+      console.error('Invalid MongoDB URI format');
+      return NextResponse.json(
+        { error: 'Invalid database configuration', data: [] },
+        { status: 500 }
+      );
+    }
+    
     client = new MongoClient(uri, {
       connectTimeoutMS: 5000,
       socketTimeoutMS: 10000,
@@ -25,11 +37,14 @@ export async function GET() {
       .maxTimeMS(5000)
       .toArray();
 
-    return NextResponse.json(listings || []);
+    return NextResponse.json({ 
+      data: listings || [],
+      error: null 
+    });
     
   } catch (error) {
     return NextResponse.json(
-      { error: 'Database connection failed' },
+      { error: 'Database connection failed', data: [] },
       { status: 500 }
     );
   } finally {
