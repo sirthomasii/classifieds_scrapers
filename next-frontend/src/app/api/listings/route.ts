@@ -1,10 +1,27 @@
-import { MongoClient } from 'mongodb';
+import mongoose from 'mongoose';
 import { NextResponse } from 'next/server';
 
 const uri = process.env.MONGODB_URI;
 
+// Define a schema for your listings
+const listingSchema = new mongoose.Schema({
+  link: String,
+  source: String,
+  description: String,
+  last_updated: Date,
+  main_image: String,
+  price: String,
+  timestamp: Date,
+  title: {
+    original: String,
+    english: String
+  }
+}, { strict: false }); // Changed to strict: true for data consistency
+
+// Create a model
+const Listing = mongoose.models.Listing || mongoose.model('Listing', listingSchema);
+
 export async function GET() {
-  let client;
   try {
     if (!uri) {
       console.error('MongoDB URI is not configured in environment variables');
@@ -14,28 +31,13 @@ export async function GET() {
       );
     }
 
-    if (!uri.startsWith('mongodb')) {
-      console.error('Invalid MongoDB URI format');
-      return NextResponse.json(
-        { error: 'Invalid database configuration', data: [] },
-        { status: 500 }
-      );
-    }
-    
-    client = new MongoClient(uri, {
-      connectTimeoutMS: 5000,
-      socketTimeoutMS: 10000,
-      serverSelectionTimeoutMS: 5000,
-    });
-    
-    await client.connect();
+    // Connect to MongoDB using Mongoose
+    await mongoose.connect(uri);
 
-    const db = client.db('fleatronics');
-    const listings = await db.collection('listings')
-      .find({})
-      // .limit(50)
+    // Query using Mongoose model
+    const listings = await Listing.find({})
       .maxTimeMS(5000)
-      .toArray();
+      .lean(); // .lean() returns plain JavaScript objects instead of Mongoose documents
 
     return NextResponse.json({ 
       data: listings || [],
@@ -48,6 +50,8 @@ export async function GET() {
       { status: 500 }
     );
   } finally {
-    await client?.close().catch(() => {});
+    // Mongoose manages the connection pool automatically
+    // but you can close it if needed
+    // await mongoose.disconnect();
   }
 }
