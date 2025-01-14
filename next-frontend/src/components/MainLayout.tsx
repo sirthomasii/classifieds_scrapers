@@ -53,6 +53,7 @@ export function MainLayout({ children, initialMarketplace = 'all', initialCatego
           return;
         }
 
+        // Group data by source
         const groupedData = result.data.reduce((acc: Record<string, { all: Array<Publication> }>, item: Publication) => {
           const source = item.source?.toLowerCase() || 'unknown';
           if (!acc[source]) {
@@ -60,7 +61,13 @@ export function MainLayout({ children, initialMarketplace = 'all', initialCatego
           }
           acc[source].all.push(item);
           return acc;
-        }, {});
+        }, {
+          blocket: { all: [] },
+          gumtree: { all: [] },
+          kleinanzeigen: { all: [] },
+          olx: { all: [] },
+          ricardo: { all: [] }
+        });
 
         setMarketplaceData(groupedData);
       } catch (error) {
@@ -80,21 +87,15 @@ export function MainLayout({ children, initialMarketplace = 'all', initialCatego
     if (!marketplaceData) return { all: [] };
     
     if (selectedMarketplace === 'all') {
-      // Merge all items from all marketplaces
-      const mergedData: MarketplaceData = { all: [] };
+      // Merge all items from all marketplaces into a single array
+      const allItems = Object.values(marketplaceData)
+        .flatMap(marketplace => marketplace.all || []);
       
-      Object.values(marketplaceData).forEach(marketplace => {
-        if (marketplace.all && Array.isArray(marketplace.all)) {
-          mergedData.all = [...mergedData.all, ...marketplace.all];
-        }
-      });
-      
-      return mergedData;
+      return { all: allItems };
     }
 
     // For single marketplace
-    const currentMarketplace = marketplaceData[selectedMarketplace as keyof typeof marketplaceData];
-    return currentMarketplace ? { all: currentMarketplace.all || [] } : { all: [] };
+    return marketplaceData[selectedMarketplace as keyof typeof marketplaceData] || { all: [] };
   };
 
   return (
