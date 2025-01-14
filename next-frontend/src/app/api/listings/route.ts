@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import { NextResponse } from 'next/server';
 
 const uri = process.env.MONGODB_URI;
+console.log(uri);
 
 // Define schema outside of the route handler
 const listingSchema = new mongoose.Schema({
