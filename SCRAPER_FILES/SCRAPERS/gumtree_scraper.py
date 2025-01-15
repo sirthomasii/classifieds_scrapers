@@ -180,7 +180,7 @@ def convert_gbp_to_eur(gbp_amount):
     """Convert GBP to EUR using a fixed conversion rate"""
     # Using an approximate conversion rate (you might want to use an API for real-time rates)
     GBP_TO_EUR_RATE = 1.17
-    return round(gbp_amount * GBP_TO_EUR_RATE, 2)
+    return int(gbp_amount * GBP_TO_EUR_RATE)
 
 def clean_price(price_str):
     """Clean price string and convert to number"""
@@ -257,6 +257,10 @@ def scrape(max_pages=2):
                         if img:
                             largest_image_url = img.get('data-src') or img.get('src')
 
+                    # Get time text
+                    time_container = article.find('div', attrs={'data-q': 'tile-date'})
+                    time_text = time_container.get_text(strip=True) if time_container else None
+
                     if not is_featured:
                         page_data_list.append({
                             'title': {
@@ -270,7 +274,7 @@ def scrape(max_pages=2):
                                 'gbp': price_gbp_clean,
                                 'eur': price_eur
                             },
-                            'timestamp': datetime.now().isoformat(),
+                            'timestamp': parse_time_text(time_text).isoformat() if time_text else datetime.now().isoformat(),
                             'source': 'gumtree',
                             'scraped_at': datetime.now().isoformat()
                         })

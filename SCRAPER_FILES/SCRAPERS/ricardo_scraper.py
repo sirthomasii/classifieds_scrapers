@@ -174,7 +174,7 @@ def scrape(max_pages=2):
                 """Convert CHF to EUR using a fixed conversion rate"""
                 # Using an approximate conversion rate (you might want to use an API for real-time rates)
                 CHF_TO_EUR_RATE = 1.05
-                return round(chf_amount * CHF_TO_EUR_RATE, 2)
+                return int(chf_amount * CHF_TO_EUR_RATE)
 
             def clean_price(price_str):
                 """Clean price string and convert to number"""
@@ -297,7 +297,7 @@ def scrape(max_pages=2):
                                     'main_image': largest_image_url,
                                     'link': "https://www.ricardo.ch"+link,
                                     'price': price,
-                                    'timestamp': timestamp.isoformat() if timestamp else None,
+                                    'timestamp': timestamp.isoformat() if timestamp else datetime.now().isoformat(),
                                 })
                             
                         except Exception as e:

@@ -31,11 +31,11 @@ interface MarketplaceData {
 export function MainLayout({ children, initialMarketplace = 'all', initialCategory = null }: MainLayoutProps) {
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
   const [marketplaceData, setMarketplaceData] = useState<{
-    blocket: MarketplaceData;
-    gumtree: MarketplaceData;
-    kleinanzeigen: MarketplaceData;
-    olx: MarketplaceData;
-    ricardo: MarketplaceData;
+    blocket: { all: Publication[] };
+    gumtree: { all: Publication[] };
+    kleinanzeigen: { all: Publication[] };
+    olx: { all: Publication[] };
+    ricardo: { all: Publication[] };
   } | null>(null);
   const [selectedMarketplace, setSelectedMarketplace] = useState(initialMarketplace);
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
@@ -83,19 +83,16 @@ export function MainLayout({ children, initialMarketplace = 'all', initialCatego
     setIsSidebarVisible(!isSidebarVisible);
   };
 
-  const getCurrentMarketplaceData = (): MarketplaceData | undefined => {
-    if (!marketplaceData) return { all: [] };
+  const getCurrentMarketplaceData = (): { all: Publication[] } | undefined => {
+    if (!marketplaceData) return undefined;
     
     if (selectedMarketplace === 'all') {
-      // Merge all items from all marketplaces into a single array
       const allItems = Object.values(marketplaceData)
         .flatMap(marketplace => marketplace.all || []);
-      
       return { all: allItems };
     }
 
-    // For single marketplace
-    return marketplaceData[selectedMarketplace as keyof typeof marketplaceData] || { all: [] };
+    return marketplaceData[selectedMarketplace as keyof typeof marketplaceData];
   };
 
   return (

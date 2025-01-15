@@ -195,7 +195,7 @@ def scrape(max_pages=1):
                 """Convert RON (Romanian Lei) to EUR using a fixed conversion rate"""
                 # Using an approximate conversion rate (you might want to use an API for real-time rates)
                 RON_TO_EUR_RATE = 0.202
-                return round(ron_amount * RON_TO_EUR_RATE, 2)
+                return int(ron_amount * RON_TO_EUR_RATE)
 
             def clean_price(price_str):
                 """Clean price string and convert to number"""
@@ -320,7 +320,7 @@ def scrape(max_pages=1):
                                         'ron': price_ron_clean,
                                         'eur': price_eur
                                     },
-                                    'timestamp': timestamp.isoformat() if timestamp else None,
+                                    'timestamp': timestamp.isoformat() if timestamp else datetime.now().isoformat(),
                                 })
                             
                         except Exception as e:

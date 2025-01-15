@@ -9,7 +9,7 @@ import styles from './viewport.module.css';
 import Image from 'next/image';
 
 interface ViewportProps {
-  marketplaceData: MarketplaceData | undefined;
+  marketplaceData: { all: Publication[] } | undefined;
   selectedCategory: string | null;
   selectedMarketplace: string;
 }
@@ -25,9 +25,7 @@ export function Viewport({
 
   console.log('Raw marketplaceData:', marketplaceData); // Debug log
 
-  const filteredData = selectedCategory ? 
-    (marketplaceData?.[selectedCategory] ?? []) :
-    (marketplaceData?.all ?? []);
+  const filteredData = marketplaceData?.all ?? [];
 
   console.log('Filtered data before search:', filteredData); // Debug log
 
@@ -123,7 +121,7 @@ export function Viewport({
                 color: '#00ff00',
                 marginBottom: '8px'
               }}>
-                {item.price || 'Price not available'}
+                {item.price?.eur ? `${item.price.eur} €` : 'Price not available'}
               </div>
               <div style={{ 
                 fontSize: '12px',

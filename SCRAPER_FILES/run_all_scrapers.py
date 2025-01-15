@@ -6,6 +6,15 @@ from pymongo import MongoClient, UpdateOne
 import subprocess
 from datetime import datetime
 
+# Define max pages per scraper
+SCRAPER_CONFIG = {
+    'blocket': 1,
+    'gumtree': 1,
+    'kleinanzeigen': 1,
+    'olx': 1,
+    'ricardo': 1
+}
+
 def load_scraper(file_path):
     """Dynamically load a Python module from file path"""
     module_name = os.path.splitext(os.path.basename(file_path))[0]
@@ -56,10 +65,14 @@ def upload_to_mongo(site_name, data):
     finally:
         client.close()
 
-def run_scraper(scraper_path, max_pages, translation_service):
-    """Run a single scraper with max_pages parameter"""
+def run_scraper(scraper_path, translation_service):
+    """Run a single scraper with custom max_pages parameter"""
     try:
         site_name = os.path.basename(scraper_path).replace('_scraper.py', '')
+        
+        # Get max_pages from config, default to 1 if not specified
+        max_pages = SCRAPER_CONFIG.get(site_name, 1)
+        
         print(f"\n=== Starting {site_name} scraper with max_pages={max_pages} ===")
         
         scraper = load_scraper(scraper_path)
@@ -82,7 +95,7 @@ def run_scraper(scraper_path, max_pages, translation_service):
         import traceback
         traceback.print_exc()
 
-def main(max_pages = 1):
+def main():
     # Get the directory containing the scrapers
     scrapers_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'SCRAPERS')
 
@@ -97,7 +110,9 @@ def main(max_pages = 1):
     ]
 
     print(f"Found scrapers: {[os.path.basename(f) for f in scraper_files]}")
-    print(f"Running with max_pages={max_pages}")
+    print(f"Scraper configurations:")
+    for name, pages in SCRAPER_CONFIG.items():
+        print(f"- {name}: {pages} pages")
 
     # Initialize translation service
     translation_service = TranslationService()
@@ -105,7 +120,7 @@ def main(max_pages = 1):
 
     # Run scrapers sequentially
     for scraper_path in scraper_files:
-        run_scraper(scraper_path, max_pages, translation_service)
+        run_scraper(scraper_path, translation_service)
 
     # Stop translation service and wait for completion
     translation_service.stop()

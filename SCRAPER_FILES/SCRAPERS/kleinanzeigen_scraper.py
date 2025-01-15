@@ -244,8 +244,10 @@ def scrape(max_pages=2):
                         'description': description,
                         'main_image': largest_image_url,
                         'link': full_link,
-                        'price': price,  # Already in EUR, no conversion needed
-                        'timestamp': timestamp.isoformat() if timestamp else None,
+                        'price': {
+                            'eur': price
+                        },
+                        'timestamp': timestamp.isoformat() if timestamp else datetime.now().isoformat(),
                     })
                 
             except Exception as e:

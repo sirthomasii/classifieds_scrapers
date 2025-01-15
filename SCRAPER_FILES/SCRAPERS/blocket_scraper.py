@@ -277,7 +277,7 @@ def scrape(max_pages=2):
                         'sek': price_sek_clean,
                         'eur': price_eur
                     },
-                    'timestamp': timestamp.isoformat() if timestamp else None
+                    'timestamp': parse_swedish_time(time_text).isoformat() if time_text else datetime.now().isoformat()
                 })
                 
             except Exception as e:
