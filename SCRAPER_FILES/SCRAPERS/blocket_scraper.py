@@ -154,6 +154,23 @@ def parse_swedish_time(time_text):
         return yesterday.replace(hour=hour, minute=minute, second=0, microsecond=0)
     return None
 
+def convert_sek_to_eur(sek_amount):
+    """Convert SEK to EUR using a fixed conversion rate"""
+    # Using an approximate conversion rate (you might want to use an API for real-time rates)
+    SEK_TO_EUR_RATE = 0.087
+    return int(sek_amount * SEK_TO_EUR_RATE)
+
+def clean_price(price_str):
+    """Clean price string and convert to number"""
+    if not price_str:
+        return None
+    # Remove spaces, 'kr', and handle possible thousands separator
+    cleaned = price_str.replace(' ', '').replace('kr', '').replace('\xa0', '')
+    try:
+        return int(cleaned)
+    except ValueError:
+        return None
+
 def scrape(max_pages=2):
     """Scrape Blocket listings"""
     print(f"\nDEBUG: Blocket scraper starting with max_pages={max_pages}")
@@ -205,9 +222,11 @@ def scrape(max_pages=2):
                 title_container = article.find('span', class_=lambda x: x and 'styled__SubjectContainer' in x)
                 title = title_container.get_text(strip=True) if title_container else None
                         
-                # Get price from Price__StyledPrice
+                # Get price from Price__StyledPrice and convert to EUR
                 price_container = article.find('div', class_=lambda x: x and 'Price__StyledPrice' in x)
-                price = price_container.get_text(strip=True) if price_container else None
+                price_sek = price_container.get_text(strip=True) if price_container else None
+                price_sek_clean = clean_price(price_sek)
+                price_eur = convert_sek_to_eur(price_sek_clean) if price_sek_clean is not None else None
                 
                 # Get image from picture tag and srcset
                 picture = article.find('picture')
@@ -254,7 +273,10 @@ def scrape(max_pages=2):
                     'description': None,
                     'main_image': largest_image_url,
                     'link': ("https://www.blocket.se" + link) if link else None,
-                    'price': price,
+                    'price': {
+                        'sek': price_sek_clean,
+                        'eur': price_eur
+                    },
                     'timestamp': timestamp.isoformat() if timestamp else None
                 })
                 

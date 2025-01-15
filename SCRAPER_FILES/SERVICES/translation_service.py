@@ -159,3 +159,67 @@ class TranslationService:
             print(f"Error uploading to MongoDB: {e}")
         finally:
             client.close()
+
+def translate_listings(data, site_name):
+    """Translate listings from a specific marketplace"""
+    print(f"\nTranslating listings from {site_name}...")
+    
+    # Skip translation for English sites
+    if site_name.lower() == 'gumtree':
+        print("Skipping translation for Gumtree (already in English)")
+        return data
+
+    translator = GoogleTranslator(source='auto', target='en')
+    
+    # Collect all titles for batch translation
+    all_titles = []
+    title_map = {}  # To map translated titles back to their ads
+
+    for page_num in data:
+        for ad in data[page_num]:
+            if ad['title']['original']:
+                all_titles.append(ad['title']['original'])
+                title_map[ad['title']['original']] = ad
+
+    # Function to split titles into chunks
+    def split_into_chunks(titles, max_length=5000):
+        chunks = []
+        current_chunk = []
+        current_length = 0
+
+        for title in titles:
+            title_length = len(title) + 2  # Account for ". " separator
+            if current_length + title_length > max_length:
+                chunks.append(current_chunk)
+                current_chunk = []
+                current_length = 0
+            current_chunk.append(title)
+            current_length += title_length
+
+        if current_chunk:
+            chunks.append(current_chunk)
+
+        return chunks
+
+    # Translate titles in chunks
+    try:
+        chunks = split_into_chunks(all_titles)
+        translated_titles = []
+
+        for chunk in chunks:
+            single_string = ". ".join(chunk)
+            translated_chunk = translator.translate(single_string)
+            translated_titles.extend(translated_chunk.split(". "))
+            time.sleep(1)  # Be nice to the translation service
+
+        # Map translations back to listings
+        for original, translated in zip(all_titles, translated_titles[:len(all_titles)]):
+            title_map[original]['title']['english'] = translated
+
+        print(f"Successfully translated {len(translated_titles)} titles from {site_name}")
+        return data
+
+    except Exception as e:
+        print(f"Translation error for {site_name}: {e}")
+        # Return original data if translation fails
+        return data

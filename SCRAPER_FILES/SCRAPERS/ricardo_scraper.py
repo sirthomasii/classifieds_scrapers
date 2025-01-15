@@ -170,6 +170,23 @@ def scrape(max_pages=2):
                 
                 return None
 
+            def convert_chf_to_eur(chf_amount):
+                """Convert CHF to EUR using a fixed conversion rate"""
+                # Using an approximate conversion rate (you might want to use an API for real-time rates)
+                CHF_TO_EUR_RATE = 1.05
+                return round(chf_amount * CHF_TO_EUR_RATE, 2)
+
+            def clean_price(price_str):
+                """Clean price string and convert to number"""
+                if not price_str:
+                    return None
+                # Remove any spaces and replace Swiss thousand separator
+                cleaned = price_str.replace(' ', '').replace("'", '')
+                try:
+                    return float(cleaned)
+                except ValueError:
+                    return None
+
             # Remove the PAGES_TO_SCRAPE constant as we'll now use dynamic stopping
             found_yesterday = False
             page = 1
@@ -259,12 +276,16 @@ def scrape(max_pages=2):
                             description_container = article.find('p', class_=lambda x: x and 'description' in x)
                             description = description_container.get_text(strip=True) if description_container else None
                                 
-                            # Get price by finding text with .00 pattern
+                            # Get price and convert to EUR
                             price = None
                             price_text = article.find(text=lambda t: t and '.00' in t)
                             if price_text:
-                                # Clean up the price text and remove any whitespace
-                                price = price_text.strip()
+                                price_chf = clean_price(price_text.strip())
+                                price_eur = convert_chf_to_eur(price_chf) if price_chf is not None else None
+                                price = {
+                                    'chf': price_chf,
+                                    'eur': price_eur
+                                }
                             
                             if not is_featured:
                                 page_data_list.append({

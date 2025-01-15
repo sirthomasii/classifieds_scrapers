@@ -95,16 +95,22 @@ export function Viewport({
             className={styles.itemCard}
             onClick={() => item.link && window.open(item.link, '_blank')}
           >
-            {item.main_image && (
-              <Image
-                src={item.main_image || ''}
-                alt={item.title?.english || item.title?.original || 'Product image'}
-                width={250}
-                height={180}
-                style={{ objectFit: 'cover' }}
-              />
-            )}
-            <div style={{ padding: '10px 0' }}>
+            <div className={styles.imageContainer}>
+              {item.main_image && (
+                <Image
+                  src={item.main_image || ''}
+                  alt={item.title?.english || item.title?.original || 'Product image'}
+                  width={250}
+                  height={180}
+                  style={{ 
+                    objectFit: 'cover',
+                    width: '100%',
+                    height: '100%'
+                  }}
+                />
+              )}
+            </div>
+            <div className={styles.itemContent}>
               <div style={{ 
                 fontSize: '16px', 
                 fontWeight: 'bold',

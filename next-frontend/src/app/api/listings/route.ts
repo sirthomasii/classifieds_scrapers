@@ -2,8 +2,6 @@ import mongoose from 'mongoose';
 import { NextResponse } from 'next/server';
 
 const uri = process.env.MONGODB_URI;
-console.log(uri);
-
 // Define schema outside of the route handler
 const listingSchema = new mongoose.Schema({
   link: String,
@@ -11,12 +9,15 @@ const listingSchema = new mongoose.Schema({
   description: String,
   last_updated: Date,
   main_image: String,
-  price: String,
   timestamp: Date,
   title: {
     original: String,
     english: String
+  },
+  price: {
+    eur: String
   }
+
 }, { strict: false });
 
 // Create model outside of the route handler

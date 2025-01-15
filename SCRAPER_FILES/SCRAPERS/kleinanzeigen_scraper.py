@@ -150,6 +150,19 @@ def parse_time(time_text):
     
     return None
 
+def clean_price(price_str):
+    """Clean price string and convert to number"""
+    if not price_str:
+        return None
+    # Remove €, VB (Verhandlungsbasis/negotiable), spaces, and handle German number format
+    cleaned = price_str.replace('€', '').replace('VB', '').replace(' ', '').strip()
+    try:
+        # Convert German number format (1.234,56 -> 1234.56)
+        cleaned = cleaned.replace('.', '').replace(',', '.')
+        return int(cleaned)
+    except ValueError:
+        return None
+
 def scrape(max_pages=2):
     found_yesterday = False
     page = 1
@@ -210,7 +223,8 @@ def scrape(max_pages=2):
                             
                 # Get price
                 price_container = article.find('p', class_=lambda x: x and 'price-shipping' in x)
-                price = price_container.get_text(strip=True) if price_container else None
+                price_text = price_container.get_text(strip=True) if price_container else None
+                price = clean_price(price_text)
                 
                 # Get image
                 imagebox = article.find('div', class_='imagebox srpimagebox')
@@ -230,7 +244,7 @@ def scrape(max_pages=2):
                         'description': description,
                         'main_image': largest_image_url,
                         'link': full_link,
-                        'price': price,
+                        'price': price,  # Already in EUR, no conversion needed
                         'timestamp': timestamp.isoformat() if timestamp else None,
                     })
                 

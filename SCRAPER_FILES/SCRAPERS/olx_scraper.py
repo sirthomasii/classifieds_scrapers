@@ -191,6 +191,28 @@ def scrape(max_pages=1):
                     return last_entry.split(' ')[0]
                 return None
 
+            def convert_ron_to_eur(ron_amount):
+                """Convert RON (Romanian Lei) to EUR using a fixed conversion rate"""
+                # Using an approximate conversion rate (you might want to use an API for real-time rates)
+                RON_TO_EUR_RATE = 0.202
+                return round(ron_amount * RON_TO_EUR_RATE, 2)
+
+            def clean_price(price_str):
+                """Clean price string and convert to number"""
+                if not price_str:
+                    return None
+                # Remove 'lei', 'Prețul e negociabil', spaces, and any other currency formatting
+                cleaned = (price_str.lower()
+                          .replace('prețul e negociabil', '')
+                          .replace('pretul e negociabil', '')
+                          .replace('lei', '')
+                          .replace(' ', '')
+                          .replace('.', ''))
+                try:
+                    return int(cleaned)
+                except ValueError:
+                    return None
+
             # Remove the PAGES_TO_SCRAPE constant as we'll now use dynamic stopping
             found_yesterday = False
             page = 1
@@ -262,9 +284,11 @@ def scrape(max_pages=1):
                             if img_src and 'no_thumbnail' in img_src:
                                 img_src = None
                             
-                            # Get price
+                            # Get price and convert to EUR
                             price_container = article.find('p', attrs={'data-testid': 'ad-price'})
-                            price = price_container.get_text(strip=True) if price_container else None
+                            price_ron = price_container.get_text(strip=True) if price_container else None
+                            price_ron_clean = clean_price(price_ron)
+                            price_eur = convert_ron_to_eur(price_ron_clean) if price_ron_clean is not None else None
 
                             # Check if ad is featured
                             featured_div = article.find('div', string='PROMOVAT')
@@ -292,7 +316,10 @@ def scrape(max_pages=1):
                                     'description': description,
                                     'main_image': img_src,
                                     'link': f"https://www.olx.ro{link}" if link else None,
-                                    'price': price,
+                                    'price': {
+                                        'ron': price_ron_clean,
+                                        'eur': price_eur
+                                    },
                                     'timestamp': timestamp.isoformat() if timestamp else None,
                                 })
                             

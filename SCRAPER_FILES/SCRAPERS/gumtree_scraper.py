@@ -176,6 +176,23 @@ def parse_time_text(time_text):
     
     return None
 
+def convert_gbp_to_eur(gbp_amount):
+    """Convert GBP to EUR using a fixed conversion rate"""
+    # Using an approximate conversion rate (you might want to use an API for real-time rates)
+    GBP_TO_EUR_RATE = 1.17
+    return round(gbp_amount * GBP_TO_EUR_RATE, 2)
+
+def clean_price(price_str):
+    """Clean price string and convert to number"""
+    if not price_str:
+        return None
+    # Remove £ symbol and any spaces, commas
+    cleaned = price_str.replace('£', '').replace(' ', '').replace(',', '')
+    try:
+        return int(cleaned)
+    except ValueError:
+        return None
+
 def scrape(max_pages=2):
     found_yesterday = False
     page = 1
@@ -226,10 +243,12 @@ def scrape(max_pages=2):
                     description_container = article.find('div', attrs={'data-q': 'tile-description'})
                     description = description_container.find('p').get_text(strip=True) if description_container else None
                             
-                    # Get price
+                    # Get price and convert to EUR
                     price_container = article.find('div', attrs={'data-q': 'tile-price'})
-                    price = price_container.get_text(strip=True) if price_container else None
-                    
+                    price_gbp = price_container.get_text(strip=True) if price_container else None
+                    price_gbp_clean = clean_price(price_gbp)
+                    price_eur = convert_gbp_to_eur(price_gbp_clean) if price_gbp_clean is not None else None
+
                     # Get image
                     figure = article.find('figure', class_='listing-tile-thumbnail-image')
                     largest_image_url = None
@@ -247,8 +266,11 @@ def scrape(max_pages=2):
                             'description': description,
                             'main_image': largest_image_url,
                             'link': link,
-                            'price': price,
-                            'timestamp': datetime.now().isoformat(),  # Gumtree doesn't show consistent timestamps
+                            'price': {
+                                'gbp': price_gbp_clean,
+                                'eur': price_eur
+                            },
+                            'timestamp': datetime.now().isoformat(),
                             'source': 'gumtree',
                             'scraped_at': datetime.now().isoformat()
                         })

@@ -1,18 +1,28 @@
 .itemCard {
   width: 250px;
-  min-height: 300px;
   background-color: rgba(40, 40, 40, 0.9);
   color: white;
-  padding: 15px;
   border-radius: 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-  transition: transform 0.2s;
+  overflow: hidden;
   cursor: pointer;
+  transition: transform 0.2s;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.imageContainer {
+  width: 100%;
+  height: 180px;
+  position: relative;
+  overflow: hidden;
 }
 
 .itemCard:hover {
   transform: translateY(-2px);
+}
+
+.itemContent {
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
