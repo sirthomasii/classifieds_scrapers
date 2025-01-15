@@ -121,7 +121,7 @@ export function Viewport({
                 color: '#00ff00',
                 marginBottom: '8px'
               }}>
-                {item.price?.eur ? `${item.price.eur} €` : 'Price not available'}
+                {typeof item.price?.eur === 'number' ? `${item.price.eur} €` : 'Price not available'}
               </div>
               <div style={{ 
                 fontSize: '12px',

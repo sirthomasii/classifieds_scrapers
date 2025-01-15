@@ -7,12 +7,14 @@ import subprocess
 from datetime import datetime
 
 # Define max pages per scraper
+MULTIPLIER = 10
+
 SCRAPER_CONFIG = {
-    'blocket': 1,
-    'gumtree': 1,
-    'kleinanzeigen': 1,
-    'olx': 1,
-    'ricardo': 1
+    'blocket': 1*MULTIPLIER,
+    'gumtree': 2*MULTIPLIER,
+    'kleinanzeigen': 2*MULTIPLIER,
+    'olx': 1*MULTIPLIER,
+    'ricardo': 1*MULTIPLIER
 }
 
 def load_scraper(file_path):
