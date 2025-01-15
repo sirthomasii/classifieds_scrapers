@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap');
+
 .itemCard {
   display: flex;
   flex-direction: column;
@@ -200,4 +202,28 @@
 
 .shimmerLoading::after {
   opacity: 1;
+}
+
+.logoText {
+  font-family: 'Orbitron', sans-serif;
+  color: white;
+  font-size: 24px;
+  letter-spacing: 3px;
+  margin-right: 20px;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+  position: relative;
+  z-index: 10;
+  transform: translateZ(0);
+  will-change: transform;
+  background: transparent;
+  -webkit-font-smoothing: antialiased;
+}
+
+.logoText::after {
+  content: attr(data-text);
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: white;
+  z-index: -1;
 }

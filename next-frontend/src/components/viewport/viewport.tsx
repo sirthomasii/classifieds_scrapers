@@ -95,6 +95,7 @@ export function Viewport({
         alignItems: 'center',
         borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
       }}>
+        <div className={styles.logoText}>Fleatronics</div>
         <Select
           value={selectedMarketplace}
           onChange={(value) => onMarketplaceChange(value || 'all')}
@@ -116,7 +117,7 @@ export function Viewport({
           leftSection={<IconSearch size={16} />}
           styles={{
             input: {
-              backgroundColor: 'rgba(255, 255, 255, 0.1)',
+              backgroundColor: '#2C2E33',
               color: 'white',
               '&::placeholder': {
                 color: 'rgba(255, 255, 255, 0.5)',
