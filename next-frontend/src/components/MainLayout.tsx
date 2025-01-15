@@ -1,11 +1,9 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
-import { Container, Flex, Box, Button } from '@mantine/core';
-import { IconMenu2 } from '@tabler/icons-react';
+import { Container, Box } from '@mantine/core';
 import classes from './MainLayout.module.css';
 import { Viewport } from './viewport/viewport';
-import { Sidebar } from './sidebar/sidebar';
 import { Publication } from '@/types/publication';
 
 interface MainLayoutProps {
@@ -29,7 +27,6 @@ interface MarketplaceData {
 }
 
 export function MainLayout({ children, initialMarketplace = 'all', initialCategory = null }: MainLayoutProps) {
-  const [isSidebarVisible, setIsSidebarVisible] = useState(true);
   const [marketplaceData, setMarketplaceData] = useState<{
     blocket: { all: Publication[] };
     gumtree: { all: Publication[] };
@@ -79,10 +76,6 @@ export function MainLayout({ children, initialMarketplace = 'all', initialCatego
     fetchData();
   }, []);
 
-  const toggleSidebar = () => {
-    setIsSidebarVisible(!isSidebarVisible);
-  };
-
   const getCurrentMarketplaceData = (): { all: Publication[] } | undefined => {
     if (!marketplaceData) return undefined;
     
@@ -106,53 +99,18 @@ export function MainLayout({ children, initialMarketplace = 'all', initialCatego
       }}
     >
       {children}
-      <Button
-        className={classes.mobileMenuButton}
-        onClick={toggleSidebar}
-        variant="subtle"
-        style={{
-          position: 'absolute',
-          left: '-15px',
-          top: '10px',
-          zIndex: 1000
-        }}
-      >
-        <IconMenu2 size={32} />
-      </Button>
-      <Flex style={{ minHeight: '100vh' }}>
-        <Box 
-          style={{
-            width: '300px',
-            flexShrink: 0,
-            borderRight: '1px solid rgba(255, 255, 255, 0.25)',
-            borderLeft: '1px solid rgba(255, 255, 255, 0.25)',
-          }}
-          className={`${classes.sidebar} ${isSidebarVisible ? '' : classes.hidden}`}
-        >
-          <Sidebar
-            marketplaceData={marketplaceData}
-            selectedMarketplace={selectedMarketplace}
-            selectedCategory={selectedCategory}
-            onMarketplaceChange={setSelectedMarketplace}
-            onCategoryChange={setSelectedCategory}
-          />
-        </Box>
-        <Box style={{ 
-          flex: 1, 
-          position: 'relative', 
-          backgroundColor: 'rgba(0, 0, 0, 0.75)', 
-          borderRight: '1px solid rgba(255, 255, 255, 0.25)',
-          width: '100%',
-          overflowX: 'hidden'
-        }}>
-          <Viewport 
-            marketplaceData={getCurrentMarketplaceData()}
-            selectedCategory={selectedCategory}
-            selectedMarketplace={selectedMarketplace}
-            onMarketplaceChange={setSelectedMarketplace}
-          />
-        </Box>
-      </Flex>
+      <Box style={{ 
+        minHeight: '100vh',
+        backgroundColor: 'rgba(0, 0, 0, 0.75)', 
+        width: '100%',
+      }}>
+        <Viewport 
+          marketplaceData={getCurrentMarketplaceData()}
+          selectedCategory={selectedCategory}
+          selectedMarketplace={selectedMarketplace}
+          onMarketplaceChange={setSelectedMarketplace}
+        />
+      </Box>
     </Container>
   );
 }

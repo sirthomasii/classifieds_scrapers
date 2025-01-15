@@ -12,9 +12,10 @@ describe('Viewport', () => {
           marketplaceData={undefined}
           selectedCategory={null}
           selectedMarketplace="all"
+          onMarketplaceChange={() => {}}
         />
       </MantineProvider>
     );
-    expect(screen.getByPlaceholderText(/Search publications.../i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/Search listings.../i)).toBeInTheDocument();
   });
 });

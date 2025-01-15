@@ -182,17 +182,23 @@ export function Viewport({
                 </div>
                 <div style={{ 
                   fontSize: '14px',
-                  color: '#00ff00',
+                  color: '#4CAF50',
                   marginBottom: '8px'
                 }}>
                   {typeof item.price?.eur === 'number' ? `${item.price.eur} €` : 'Price not available'}
                 </div>
                 <div style={{ 
                   fontSize: '12px',
-                  color: '#999',
+                  color: '#aaa',
                   marginBottom: '4px'
                 }}>
-                  From: {item.link?.split('/')[2] || 'Unknown source'}
+                  {item.timestamp ? new Date(item.timestamp).toLocaleString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  }) : 'No date'}
                 </div>
                 <div style={{
                   fontSize: '11px',

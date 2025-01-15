@@ -1,12 +1,14 @@
 .itemCard {
   display: flex;
   flex-direction: column;
-  background: rgba(50, 50, 50, 0.5);
+  background: rgb(40, 40, 40);
   border-radius: 8px;
   overflow: hidden;
   cursor: pointer;
-  transition: transform 0.2s, background 0.2s;
-  min-width: 0; /* Prevent overflow */
+  transform: translateZ(0); /* Force GPU acceleration */
+  min-width: 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  will-change: transform;
 }
 
 .imageContainer {
@@ -17,14 +19,16 @@
 }
 
 .itemCard:hover {
-  background: rgba(60, 60, 60, 0.6);
+  background: rgb(50, 50, 50);
   transform: translateY(-2px);
+  transition: transform 0.2s;
 }
 
 .itemContent {
   padding: 12px;
   flex: 1;
   min-width: 0;
+  background: rgb(40, 40, 40);
 }
 
 .skeleton {
