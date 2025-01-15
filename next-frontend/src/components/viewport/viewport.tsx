@@ -88,7 +88,7 @@ export function Viewport({
         </div>
       </div>
 
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', justifyContent: 'flex-start' }}>
+      <div className={styles.gridContainer}>
         {isLoading ? (
           // Show 12 skeleton cards while loading
           Array(12).fill(0).map((_, index) => (
@@ -120,6 +120,9 @@ export function Viewport({
                     height={180}
                     style={{ 
                       objectFit: 'cover',
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
                       width: '100%',
                       height: '100%'
                     }}
@@ -168,13 +171,18 @@ export function Viewport({
       </div>
 
       {totalPages > 1 && (
-        <div style={{ 
-          marginTop: '20px', 
-          color: 'white',
+        <div className={styles.paginationContainer} style={{
           display: 'flex',
           justifyContent: 'center',
+          alignItems: 'center',
           gap: '10px',
-          padding: '20px 0'
+          padding: '20px 8px',
+          width: '100%',
+          flexWrap: 'nowrap',
+          maxWidth: '100%',
+          overflowX: 'auto',
+          WebkitOverflowScrolling: 'touch',
+          msOverflowStyle: '-ms-autohiding-scrollbar'
         }}>
           <button 
             onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
@@ -185,12 +193,54 @@ export function Viewport({
               border: 'none',
               borderRadius: '4px',
               color: 'white',
-              cursor: currentPage === 1 ? 'default' : 'pointer'
+              cursor: currentPage === 1 ? 'default' : 'pointer',
+              flexShrink: 0
             }}
           >
             Previous
           </button>
-          <span>Page {currentPage} of {totalPages}</span>
+          
+          <div style={{ 
+            display: 'flex', 
+            gap: '4px', 
+            padding: '0 4px',
+            flexShrink: 0,
+            whiteSpace: 'nowrap'
+          }}>
+            {[...Array(totalPages)].map((_, i) => {
+              // Show current page, 2 before and 2 after
+              const shouldShow = 
+                i === 0 || // First page
+                i === totalPages - 1 || // Last page
+                (i >= currentPage - 2 && i <= currentPage + 2); // Current range
+              
+              if (!shouldShow) {
+                if (i === currentPage - 3 || i === currentPage + 3) {
+                  return <span key={i} style={{ color: 'white' }}>...</span>;
+                }
+                return null;
+              }
+              
+              return (
+              <button
+                key={i}
+                onClick={() => setCurrentPage(i + 1)}
+                style={{
+                  padding: '5px 10px',
+                  background: currentPage === i + 1 ? '#666' : '#444',
+                  border: 'none',
+                  borderRadius: '4px',
+                  color: 'white',
+                  cursor: 'pointer',
+                  minWidth: '32px'
+                }}
+              >
+                {i + 1}
+              </button>
+              );
+            })}
+          </div>
+
           <button 
             onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
             disabled={currentPage === totalPages}

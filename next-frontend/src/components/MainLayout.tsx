@@ -137,7 +137,14 @@ export function MainLayout({ children, initialMarketplace = 'all', initialCatego
             onCategoryChange={setSelectedCategory}
           />
         </Box>
-        <Box style={{ flex: 1, position: 'relative', backgroundColor: 'rgba(0, 0, 0, 0.75)', borderRight: '1px solid rgba(255, 255, 255, 0.25)' }}>
+        <Box style={{ 
+          flex: 1, 
+          position: 'relative', 
+          backgroundColor: 'rgba(0, 0, 0, 0.75)', 
+          borderRight: '1px solid rgba(255, 255, 255, 0.25)',
+          width: '100%',
+          overflowX: 'hidden'
+        }}>
           <Viewport 
             marketplaceData={getCurrentMarketplaceData()}
             selectedCategory={selectedCategory}
