@@ -133,7 +133,8 @@ export function Viewport({
                 <div style={{ 
                   fontSize: '16px', 
                   fontWeight: 'bold',
-                  marginBottom: '8px'
+                  marginBottom: '8px',
+                  color: 'white'
                 }}>
                   {item.title?.english || item.title?.original || 'No title'}
                 </div>
