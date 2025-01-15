@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { TextInput, Card, Text, Group, Pagination, Box, Skeleton } from '@mantine/core';
+import { TextInput, Card, Text, Group, Pagination, Box, Skeleton, Select, Autocomplete } from '@mantine/core';
 import axios from 'axios';
 import qs from 'qs';
 import { Publication } from '@/types/publication';
@@ -7,20 +7,24 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { MarketplaceData } from '@/types/marketplace';
 import styles from './viewport.module.css';
 import Image from 'next/image';
+import { IconSearch } from '@tabler/icons-react';
 
 interface ViewportProps {
   marketplaceData: { all: Publication[] } | undefined;
   selectedCategory: string | null;
   selectedMarketplace: string;
+  onMarketplaceChange: (marketplace: string) => void;
 }
 
 export function Viewport({
   marketplaceData,
   selectedCategory,
-  selectedMarketplace
+  selectedMarketplace,
+  onMarketplaceChange
 }: ViewportProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchSuggestions, setSearchSuggestions] = useState<string[]>([]);
   const itemsPerPage = 12;
 
   console.log('Raw marketplaceData:', marketplaceData); // Debug log
@@ -65,27 +69,65 @@ export function Viewport({
 
   const isLoading = !marketplaceData;
 
+  // Generate search suggestions from titles
+  useEffect(() => {
+    if (searchQuery.length > 2) {
+      const allTitles = (marketplaceData?.all || []).map(item => 
+        item.title?.english || item.title?.original || ''
+      );
+      const suggestions = allTitles
+        .filter(title => 
+          title.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+        .slice(0, 5);
+      setSearchSuggestions(suggestions);
+    } else {
+      setSearchSuggestions([]);
+    }
+  }, [searchQuery, marketplaceData]);
+
   return (
     <Box p="md" style={{ maxHeight: '100vh', overflowY: 'auto' }}>
-      <div style={{ color: 'white', marginBottom: '20px' }}>
-        <input
-          type="text"
+      <div style={{ 
+        padding: '16px',
+        display: 'flex',
+        gap: '16px',
+        alignItems: 'center',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
+      }}>
+        <Select
+          value={selectedMarketplace}
+          onChange={(value) => onMarketplaceChange(value || 'all')}
+          data={[
+            { value: 'all', label: 'All Marketplaces' },
+            { value: 'blocket', label: 'Blocket' },
+            { value: 'gumtree', label: 'Gumtree' },
+            { value: 'kleinanzeigen', label: 'Kleinanzeigen' },
+            { value: 'olx', label: 'OLX' },
+            { value: 'ricardo', label: 'Ricardo' },
+          ]}
+          style={{ width: '200px' }}
+        />
+        <Autocomplete
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search..."
-          style={{
-            padding: '8px',
-            marginBottom: '10px',
-            width: '200px',
-            borderRadius: '4px',
-            border: '1px solid #666',
-            background: 'rgba(255, 255, 255, 0.1)',
-            color: 'white'
+          onChange={setSearchQuery}
+          data={searchSuggestions}
+          placeholder="Search listings..."
+          leftSection={<IconSearch size={16} />}
+          styles={{
+            input: {
+              backgroundColor: 'rgba(255, 255, 255, 0.1)',
+              color: 'white',
+              '&::placeholder': {
+                color: 'rgba(255, 255, 255, 0.5)',
+              },
+            },
+            dropdown: {
+              backgroundColor: '#2C2E33',
+              color: 'white',
+            },
           }}
         />
-        <div style={{ fontSize: '14px', marginTop: '5px' }}>
-          Found {searchedData.length} items
-        </div>
       </div>
 
       <div className={styles.gridContainer}>

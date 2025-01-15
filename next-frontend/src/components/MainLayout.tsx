@@ -149,6 +149,7 @@ export function MainLayout({ children, initialMarketplace = 'all', initialCatego
             marketplaceData={getCurrentMarketplaceData()}
             selectedCategory={selectedCategory}
             selectedMarketplace={selectedMarketplace}
+            onMarketplaceChange={setSelectedMarketplace}
           />
         </Box>
       </Flex>
