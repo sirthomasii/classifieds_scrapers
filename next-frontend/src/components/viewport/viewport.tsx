@@ -220,42 +220,16 @@ export function Viewport({
       </div>
 
       {totalPages > 1 && (
-        <div className={styles.paginationContainer} style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          gap: '10px',
-          padding: '20px 8px',
-          width: '100%',
-          flexWrap: 'nowrap',
-          maxWidth: '100%',
-          overflowX: 'auto',
-          WebkitOverflowScrolling: 'touch',
-          msOverflowStyle: '-ms-autohiding-scrollbar'
-        }}>
+        <div className={styles.paginationContainer}>
           <button 
             onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
             disabled={currentPage === 1}
-            style={{
-              padding: '5px 10px',
-              background: currentPage === 1 ? '#444' : '#666',
-              border: 'none',
-              borderRadius: '4px',
-              color: 'white',
-              cursor: currentPage === 1 ? 'default' : 'pointer',
-              flexShrink: 0
-            }}
+            className={styles.paginationButton}
           >
             Previous
           </button>
           
-          <div style={{ 
-            display: 'flex', 
-            gap: '4px', 
-            padding: '0 4px',
-            flexShrink: 0,
-            whiteSpace: 'nowrap'
-          }}>
+          <div className={styles.paginationWrapper}>
             {[...Array(totalPages)].map((_, i) => {
               // Show current page, 2 before and 2 after
               const shouldShow = 
@@ -271,21 +245,13 @@ export function Viewport({
               }
               
               return (
-              <button
-                key={i}
-                onClick={() => setCurrentPage(i + 1)}
-                style={{
-                  padding: '5px 10px',
-                  background: currentPage === i + 1 ? '#666' : '#444',
-                  border: 'none',
-                  borderRadius: '4px',
-                  color: 'white',
-                  cursor: 'pointer',
-                  minWidth: '32px'
-                }}
-              >
-                {i + 1}
-              </button>
+                <button
+                  key={i}
+                  onClick={() => setCurrentPage(i + 1)}
+                  className={currentPage === i + 1 ? styles.paginationButtonActive : styles.paginationButton}
+                >
+                  {i + 1}
+                </button>
               );
             })}
           </div>
@@ -293,14 +259,7 @@ export function Viewport({
           <button 
             onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
             disabled={currentPage === totalPages}
-            style={{
-              padding: '5px 10px',
-              background: currentPage === totalPages ? '#444' : '#666',
-              border: 'none',
-              borderRadius: '4px',
-              color: 'white',
-              cursor: currentPage === totalPages ? 'default' : 'pointer'
-            }}
+            className={styles.paginationButton}
           >
             Next
           </button>
