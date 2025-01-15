@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { TextInput, Card, Text, Group, Pagination, Box } from '@mantine/core';
+import { TextInput, Card, Text, Group, Pagination, Box, Skeleton } from '@mantine/core';
 import axios from 'axios';
 import qs from 'qs';
 import { Publication } from '@/types/publication';
@@ -63,6 +63,8 @@ export function Viewport({
     image: item.main_image
   })));
 
+  const isLoading = !marketplaceData;
+
   return (
     <Box p="md" style={{ maxHeight: '100vh', overflowY: 'auto' }}>
       <div style={{ color: 'white', marginBottom: '20px' }}>
@@ -87,65 +89,82 @@ export function Viewport({
       </div>
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', justifyContent: 'flex-start' }}>
-        {displayedItems.map((item, index) => (
-          <div 
-            key={`${item.link}-${index}`}
-            className={styles.itemCard}
-            onClick={() => item.link && window.open(item.link, '_blank')}
-          >
-            <div className={styles.imageContainer}>
-              {item.main_image && (
-                <Image
-                  src={item.main_image || ''}
-                  alt={item.title?.english || item.title?.original || 'Product image'}
-                  width={250}
-                  height={180}
-                  style={{ 
-                    objectFit: 'cover',
-                    width: '100%',
-                    height: '100%'
-                  }}
-                />
-              )}
-            </div>
-            <div className={styles.itemContent}>
-              <div style={{ 
-                fontSize: '16px', 
-                fontWeight: 'bold',
-                marginBottom: '8px'
-              }}>
-                {item.title?.english || item.title?.original || 'No title'}
+        {isLoading ? (
+          // Show 12 skeleton cards while loading
+          Array(12).fill(0).map((_, index) => (
+            <div key={index} className={styles.itemCard}>
+              <div className={styles.imageContainer}>
+                <Skeleton height="100%" radius="sm" className={styles.skeleton} />
               </div>
-              <div style={{ 
-                fontSize: '14px',
-                color: '#00ff00',
-                marginBottom: '8px'
-              }}>
-                {typeof item.price?.eur === 'number' ? `${item.price.eur} €` : 'Price not available'}
-              </div>
-              <div style={{ 
-                fontSize: '12px',
-                color: '#999',
-                marginBottom: '4px'
-              }}>
-                From: {item.link?.split('/')[2] || 'Unknown source'}
-              </div>
-              <div style={{
-                fontSize: '11px',
-                color: '#666',
-                fontStyle: 'italic'
-              }}>
-                {item.timestamp ? new Date(item.timestamp).toLocaleString('en-GB', {
-                  day: 'numeric',
-                  month: 'short',
-                  year: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit'
-                }) : 'No date'}
+              <div className={styles.itemContent}>
+                <Skeleton height={20} width="80%" mb={8} className={styles.skeleton} />
+                <Skeleton height={16} width="40%" mb={8} className={styles.skeleton} />
+                <Skeleton height={14} width="60%" mb={4} className={styles.skeleton} />
+                <Skeleton height={12} width="30%" className={styles.skeleton} />
               </div>
             </div>
-          </div>
-        ))}
+          ))
+        ) : (
+          displayedItems.map((item, index) => (
+            <div 
+              key={`${item.link}-${index}`}
+              className={styles.itemCard}
+              onClick={() => item.link && window.open(item.link, '_blank')}
+            >
+              <div className={styles.imageContainer}>
+                {item.main_image && (
+                  <Image
+                    src={item.main_image || ''}
+                    alt={item.title?.english || item.title?.original || 'Product image'}
+                    width={250}
+                    height={180}
+                    style={{ 
+                      objectFit: 'cover',
+                      width: '100%',
+                      height: '100%'
+                    }}
+                  />
+                )}
+              </div>
+              <div className={styles.itemContent}>
+                <div style={{ 
+                  fontSize: '16px', 
+                  fontWeight: 'bold',
+                  marginBottom: '8px'
+                }}>
+                  {item.title?.english || item.title?.original || 'No title'}
+                </div>
+                <div style={{ 
+                  fontSize: '14px',
+                  color: '#00ff00',
+                  marginBottom: '8px'
+                }}>
+                  {typeof item.price?.eur === 'number' ? `${item.price.eur} €` : 'Price not available'}
+                </div>
+                <div style={{ 
+                  fontSize: '12px',
+                  color: '#999',
+                  marginBottom: '4px'
+                }}>
+                  From: {item.link?.split('/')[2] || 'Unknown source'}
+                </div>
+                <div style={{
+                  fontSize: '11px',
+                  color: '#666',
+                  fontStyle: 'italic'
+                }}>
+                  {item.timestamp ? new Date(item.timestamp).toLocaleString('en-GB', {
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  }) : 'No date'}
+                </div>
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
       {totalPages > 1 && (
