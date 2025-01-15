@@ -14,8 +14,56 @@
 .imageContainer {
   position: relative;
   width: 100%;
-  padding-top: 75%; /* 4:3 aspect ratio */
+  padding-top: 100%;
   background: #333;
+  overflow: hidden;
+}
+
+.imageContainer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  transform: translateX(-100%);
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0,
+    rgba(255, 255, 255, 0.05) 20%,
+    rgba(255, 255, 255, 0.1) 60%,
+    rgba(255, 255, 255, 0)
+  );
+  animation: shimmer 2s infinite;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.itemCard:hover .imageContainer::after {
+  opacity: 1;
+}
+
+.imageLoading {
+  position: relative;
+  overflow: hidden;
+}
+
+.imageLoading::after {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  transform: translateX(-100%);
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0,
+    rgba(255, 255, 255, 0.05) 20%,
+    rgba(255, 255, 255, 0.1) 60%,
+    rgba(255, 255, 255, 0)
+  );
+  animation: shimmer 2s infinite;
+  content: '';
 }
 
 .itemCard:hover {
@@ -42,24 +90,6 @@
     #444 50%,
     #333 100%
   ) !important;
-}
-
-.skeleton::after {
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  transform: translateX(-100%);
-  background-image: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0) 0,
-    rgba(255, 255, 255, 0.05) 20%,
-    rgba(255, 255, 255, 0.1) 60%,
-    rgba(255, 255, 255, 0)
-  );
-  animation: shimmer 2s infinite;
-  content: '';
 }
 
 @keyframes shimmer {
@@ -164,4 +194,8 @@
   .paginationContainer {
     padding: 12px 8px;
   }
+}
+
+.shimmerLoading::after {
+  opacity: 1;
 }

@@ -135,7 +135,7 @@ export function Viewport({
           // Show 12 skeleton cards while loading
           Array(12).fill(0).map((_, index) => (
             <div key={index} className={styles.itemCard}>
-              <div className={styles.imageContainer}>
+              <div className={`${styles.imageContainer} ${styles.shimmerLoading}`}>
                 <Skeleton height="100%" radius="sm" className={styles.skeleton} />
               </div>
               <div className={styles.itemContent}>
@@ -160,6 +160,11 @@ export function Viewport({
                     alt={item.title?.english || item.title?.original || 'Product image'}
                     width={250}
                     height={180}
+                    className={styles.imageLoading}
+                    onLoadingComplete={() => {
+                      const img = document.querySelector(`[src="${item.main_image}"]`);
+                      img?.classList.remove(styles.imageLoading);
+                    }}
                     style={{ 
                       objectFit: 'cover',
                       position: 'absolute',
