@@ -119,6 +119,7 @@ export function Viewport({
             input: {
               backgroundColor: '#2C2E33',
               color: 'white',
+              borderRadius: '20px',
               '&::placeholder': {
                 color: 'rgba(255, 255, 255, 0.5)',
               },
@@ -126,6 +127,8 @@ export function Viewport({
             dropdown: {
               backgroundColor: '#2C2E33',
               color: 'white',
+              borderRadius: '12px',
+              marginTop: '8px'
             },
           }}
         />
