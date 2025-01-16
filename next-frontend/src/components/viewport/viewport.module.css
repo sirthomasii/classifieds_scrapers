@@ -177,10 +177,34 @@
 }
 
 @media (max-width: 768px) {
+  .headerContainer {
+    flex-direction: column !important;
+    align-items: center;
+  }
+
+  .logoText {
+    width: 100%;
+    text-align: center;
+    margin-bottom: 16px;
+    margin-right: 0;
+  }
+
   .gridContainer {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 6px;
     padding: 6px;
+  }
+
+  /* Stack controls on mobile */
+  .controlsWrapper {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .searchControls {
+    width: 100%;
+    display: flex;
+    gap: 8px;
   }
 
   .imageContainer {
@@ -204,6 +228,16 @@
 
   .paginationContainer {
     padding: 12px 8px;
+  }
+
+  /* Hide marketplace dropdown on mobile */
+  .marketplaceSelect {
+    display: none !important;
+  }
+
+  /* Make search bar full width */
+  .searchBar {
+    width: 100% !important;
   }
 }
 
@@ -233,4 +267,10 @@
   top: 0;
   color: white;
   z-index: -1;
+}
+
+.controlsWrapper {
+  display: flex;
+  gap: 16px;
+  flex: 1;
 }

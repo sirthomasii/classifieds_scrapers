@@ -98,64 +98,69 @@ export function Viewport({
       <div style={{ 
         padding: '16px',
         display: 'flex',
-        gap: '16px',
         alignItems: 'center',
+        gap: '16px',
         borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
-      }}>
+      }} className={styles.headerContainer}>
         <div className={styles.logoText}>Fleatronics</div>
-        <Select
-          value={selectedMarketplace}
-          onChange={(value) => onMarketplaceChange(value || 'all')}
-          data={[
-            { value: 'all', label: 'All Marketplaces' },
-            { value: 'blocket', label: 'Blocket' },
-            { value: 'gumtree', label: 'Gumtree' },
-            { value: 'kleinanzeigen', label: 'Kleinanzeigen' },
-            { value: 'olx', label: 'OLX' },
-            { value: 'ricardo', label: 'Ricardo' },
-          ]}
-          style={{ width: '200px' }}
-          styles={{
-            input: {
-              backgroundColor: '#2C2E33',
-              color: 'white',
-            },
-            dropdown: {
-              backgroundColor: '#2C2E33',
-              color: 'white',
-            },
-            option: {
-              backgroundColor: '#2C2E33',
-              color: 'white',
-              '&:hover': {
-                backgroundColor: '#1C1E23'
-              }
-            },
-          }}
-        />
-        <Autocomplete
-          value={searchQuery}
-          onChange={setSearchQuery}
-          data={searchSuggestions}
-          placeholder="Search listings..."
-          leftSection={<IconSearch size={16} />}
-          styles={{
-            input: {
-              backgroundColor: '#2C2E33',
-              color: 'white',
-              borderRadius: '20px',
-              '&::placeholder': {
-                color: 'rgba(255, 255, 255, 0.5)',
+        <div className={styles.controlsWrapper}>
+          <Select
+            className={styles.marketplaceSelect}
+            value={selectedMarketplace}
+            onChange={(value) => onMarketplaceChange(value || 'all')}
+            data={[
+              { value: 'all', label: 'All Marketplaces' },
+              { value: 'blocket', label: 'Blocket' },
+              { value: 'gumtree', label: 'Gumtree' },
+              { value: 'kleinanzeigen', label: 'Kleinanzeigen' },
+              { value: 'olx', label: 'OLX' },
+              { value: 'ricardo', label: 'Ricardo' },
+            ]}
+            style={{ width: '200px' }}
+            styles={{
+              input: {
+                backgroundColor: '#2C2E33',
+                color: 'white',
               },
-            },
-            dropdown: {
-              backgroundColor: '#2C2E33',
-              color: 'white',
-              borderRadius: '12px',
-              marginTop: '8px'
-            },
-          }}
-        />
+              dropdown: {
+                backgroundColor: '#2C2E33',
+                color: 'white',
+              },
+              option: {
+                backgroundColor: '#2C2E33',
+                color: 'white',
+                '&:hover': {
+                  backgroundColor: '#1C1E23'
+                }
+              },
+            }}
+          />
+          <Autocomplete
+            className={styles.searchBar}
+            style={{ flex: 1 }}
+            value={searchQuery}
+            onChange={setSearchQuery}
+            data={searchSuggestions}
+            placeholder={`Search ${filteredData.length.toLocaleString()} listings...`}
+            leftSection={<IconSearch size={16} />}
+            styles={{
+              input: {
+                backgroundColor: '#2C2E33',
+                color: 'white',
+                borderRadius: '20px',
+                '&::placeholder': {
+                  color: 'rgba(255, 255, 255, 0.5)',
+                },
+              },
+              dropdown: {
+                backgroundColor: '#2C2E33',
+                color: 'white',
+                borderRadius: '12px',
+                marginTop: '8px'
+              },
+            }}
+          />
+        </div>
       </div>
 
       <div className={styles.gridContainer}>
