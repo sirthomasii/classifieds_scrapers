@@ -108,6 +108,24 @@ export function Viewport({
             { value: 'ricardo', label: 'Ricardo' },
           ]}
           style={{ width: '200px' }}
+          styles={{
+            input: {
+              backgroundColor: '#2C2E33',
+              color: 'white',
+            },
+            dropdown: {
+              backgroundColor: '#2C2E33',
+              color: 'white',
+            },
+            item: {
+              '&[data-selected]': {
+                backgroundColor: '#1C1E23',
+              },
+              '&[data-hovered]': {
+                backgroundColor: '#1C1E23',
+              },
+            },
+          }}
         />
         <Autocomplete
           value={searchQuery}
@@ -230,14 +248,6 @@ export function Viewport({
 
       {totalPages > 1 && (
         <div className={styles.paginationContainer}>
-          <button 
-            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-            disabled={currentPage === 1}
-            className={styles.paginationButton}
-          >
-            Previous
-          </button>
-          
           <div className={styles.paginationWrapper}>
             {[...Array(totalPages)].map((_, i) => {
               // Show current page, 2 before and 2 after
@@ -264,14 +274,6 @@ export function Viewport({
               );
             })}
           </div>
-
-          <button 
-            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-            disabled={currentPage === totalPages}
-            className={styles.paginationButton}
-          >
-            Next
-          </button>
         </div>
       )}
     </Box>

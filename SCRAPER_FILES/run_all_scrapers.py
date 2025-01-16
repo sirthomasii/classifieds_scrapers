@@ -7,7 +7,7 @@ import subprocess
 from datetime import datetime
 
 # Define max pages per scraper
-MULTIPLIER = 10
+MULTIPLIER = 5
 
 SCRAPER_CONFIG = {
     'blocket': 1*MULTIPLIER,
