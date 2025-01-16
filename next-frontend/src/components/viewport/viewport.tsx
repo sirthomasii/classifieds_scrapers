@@ -31,16 +31,23 @@ export function Viewport({
 
   const filteredData = marketplaceData?.all ?? [];
 
-  console.log('Filtered data before search:', filteredData); // Debug log
+  // Sort data by timestamp (newest first)
+  const sortedData = [...filteredData].sort((a, b) => {
+    const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+    const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+    return timeB - timeA;
+  });
+
+  console.log('Filtered data before search:', sortedData); // Debug log
 
   const searchedData = searchQuery 
-    ? filteredData.filter(item => {
+    ? sortedData.filter(item => {
         const englishTitle = item.title?.english?.toLowerCase() || '';
         const originalTitle = item.title?.original?.toLowerCase() || '';
         const searchTerm = searchQuery.toLowerCase();
         return englishTitle.includes(searchTerm) || originalTitle.includes(searchTerm);
       })
-    : filteredData;
+    : sortedData;
 
   // Reset to page 1 when search query, category, or marketplace changes
   useEffect(() => {
@@ -117,13 +124,12 @@ export function Viewport({
               backgroundColor: '#2C2E33',
               color: 'white',
             },
-            item: {
-              '&[data-selected]': {
-                backgroundColor: '#1C1E23',
-              },
-              '&[data-hovered]': {
-                backgroundColor: '#1C1E23',
-              },
+            option: {
+              backgroundColor: '#2C2E33',
+              color: 'white',
+              '&:hover': {
+                backgroundColor: '#1C1E23'
+              }
             },
           }}
         />
