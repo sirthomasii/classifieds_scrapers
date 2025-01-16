@@ -226,24 +226,11 @@ export function Viewport({
                   marginBottom: '4px'
                 }}>
                   {item.timestamp ? new Date(item.timestamp).toLocaleString('en-US', {
-                    year: 'numeric',
                     month: 'short',
                     day: 'numeric',
                     hour: '2-digit',
-                    minute: '2-digit'
-                  }) : 'No date'}
-                </div>
-                <div style={{
-                  fontSize: '11px',
-                  color: '#666',
-                  fontStyle: 'italic'
-                }}>
-                  {item.timestamp ? new Date(item.timestamp).toLocaleString('en-GB', {
-                    day: 'numeric',
-                    month: 'short',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
+                    minute: '2-digit',
+                    hour12: false
                   }) : 'No date'}
                 </div>
               </div>
