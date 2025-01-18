@@ -8,6 +8,7 @@ import { MarketplaceData } from '@/types/marketplace';
 import styles from './viewport.module.css';
 import Image from 'next/image';
 import { IconSearch } from '@tabler/icons-react';
+import { GB, CH, DE, RO, SE } from 'country-flag-icons/react/3x2';
 
 interface ViewportProps {
   marketplaceData: { all: Publication[] } | undefined;
@@ -92,6 +93,23 @@ export function Viewport({
       setSearchSuggestions([]);
     }
   }, [searchQuery, marketplaceData]);
+
+  const getFlagComponent = (source: string) => {
+    switch(source) {
+      case 'ricardo':
+        return <CH style={{ width: '14px', marginRight: '4px', verticalAlign: 'middle' }} />;
+      case 'gumtree':
+        return <GB style={{ width: '14px', marginRight: '4px', verticalAlign: 'middle' }} />;
+      case 'kleinanzeigen':
+        return <DE style={{ width: '14px', marginRight: '4px', verticalAlign: 'middle' }} />;
+      case 'olx':
+        return <RO style={{ width: '14px', marginRight: '4px', verticalAlign: 'middle' }} />;
+      case 'blocket':
+        return <SE style={{ width: '14px', marginRight: '4px', verticalAlign: 'middle' }} />;
+      default:
+        return null;
+    }
+  };
 
   return (
     <Box p="md" style={{ maxHeight: '100vh', overflowY: 'auto' }}>
@@ -230,6 +248,18 @@ export function Viewport({
                   color: '#aaa',
                   marginBottom: '4px'
                 }}>
+                  <span style={{ 
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                    padding: '2px 6px',
+                    borderRadius: '4px',
+                    marginRight: '8px',
+                    textTransform: 'capitalize',
+                    display: 'inline-flex',
+                    alignItems: 'center'
+                  }}>
+                    {getFlagComponent(item.source)}
+                    {item.source}
+                  </span>
                   {item.timestamp ? new Date(item.timestamp).toLocaleString('en-US', {
                     month: 'short',
                     day: 'numeric',

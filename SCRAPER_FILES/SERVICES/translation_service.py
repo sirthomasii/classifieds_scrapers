@@ -7,12 +7,14 @@ from pymongo import MongoClient
 from datetime import datetime
 from pymongo.errors import BulkWriteError
 from pymongo import UpdateOne
+from .upload_service import upload_data_to_mongo
 
 class TranslationService:
     def __init__(self):
         self.translation_queue = Queue()
         self.translator = GoogleTranslator(source='auto', target='en')
         self.translation_thread = None
+        self.results = {}  # Initialize results dictionary
 
     def start(self):
         """Start the translation worker thread"""
@@ -28,6 +30,14 @@ class TranslationService:
 
     def add_to_queue(self, site_name, data):
         """Add data to translation queue"""
+        # Initialize results for this site
+        self.results[site_name] = {}
+        # Initialize category stats from the data
+        for page in data.values():
+            for item in page:
+                category = item.get('category', 'uncategorized')
+                if category not in self.results[site_name]:
+                    self.results[site_name][category] = {'total': 0, 'new': 0, 'complete': 0}
         self.translation_queue.put((site_name, data))
 
     def _split_into_chunks(self, titles, max_length=4500):
@@ -67,7 +77,7 @@ class TranslationService:
                     break
 
                 site_name, data = item
-                print(f"Translating titles for {site_name}...")
+                # print(f"Translating titles for {site_name}...")
 
                 # Collect all titles with their references
                 translations_needed = []
@@ -103,62 +113,19 @@ class TranslationService:
                         title_obj['english'] = translation
 
                     # Handle the translated data
-                    self._handle_translated_data(site_name, data)
+                    _, new_ads, _, category_stats = upload_data_to_mongo(site_name, data)
+                    # Update category stats with new ads count
+                    for category, stats in category_stats.items():
+                        self.results[site_name][category] = stats
 
             except Exception as e:
                 print(f"Error in translation worker: {e}")
             finally:
                 self.translation_queue.task_done()
 
-    def _handle_translated_data(self, site_name, translated_data):
-        """Handle the translated data by uploading it to MongoDB"""
-        self._upload_to_mongo(site_name, translated_data)
-
-    def _upload_to_mongo(self, site_name, data):
-        """Upload translated data to MongoDB with duplicate prevention"""
-        try:
-            client = MongoClient("mongodb+srv://sirthomasii:ujvkc8W1eeYP9axW@fleatronics-1.lppod.mongodb.net/?retryWrites=true&w=majority&appName=fleatronics-1")
-            db = client['fleatronics']
-            collection = db['listings']
-
-            # Create a unique compound index
-            collection.create_index([
-                ("link", 1),
-                ("source", 1)
-            ], unique=True)
-
-            # Flatten and prepare data for upsert
-            all_listings = []
-            for page in data.values():
-                for item in page:
-                    if item['link']:  # Only process items with valid links
-                        # Create filter for upsert
-                        filter_doc = {
-                            "link": item['link'],
-                            "source": site_name
-                        }
-                        # Add timestamp for tracking updates
-                        item['last_updated'] = datetime.now().isoformat()
-                        
-                        all_listings.append(UpdateOne(
-                            filter_doc,
-                            {'$set': item},
-                            upsert=True
-                        ))
-
-            if all_listings:
-                result = collection.bulk_write(all_listings, ordered=False)
-                print(f"MongoDB update results for {site_name}:")
-                print(f"- Inserted: {result.upserted_count}")
-                print(f"- Modified: {result.modified_count}")
-                print(f"- Matched: {result.matched_count}")
-
-        except BulkWriteError as bwe:
-            print(f"Some upserts failed: {bwe.details}")
-        except Exception as e:
-            print(f"Error uploading to MongoDB: {e}")
-        finally:
-            client.close()
+    def _handle_translated_data(self, site_name, data):
+        """Handle the translated data - either save to file or upload to MongoDB"""
+        upload_data_to_mongo(site_name, data)
 
 def translate_listings(data, site_name):
     """Translate listings from a specific marketplace"""

@@ -35,9 +35,13 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'frankfurt.apollo.olxcdn.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'billeder.dba.dk',
+      },
     ],
   },
-
+  
   async rewrites() {
     return [
       {

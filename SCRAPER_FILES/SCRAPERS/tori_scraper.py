@@ -18,6 +18,12 @@ options.add_argument('--headless')  # Enable headless mode
 options.add_argument('--no-sandbox')
 options.add_argument('--disable-dev-shm-usage')
 
+# Add these options to handle WebGL and GPU warnings
+options.add_argument('--disable-gpu-driver-bug-workarounds')
+options.add_argument('--disable-software-rasterizer')
+options.add_argument('--disable-webgl')
+options.add_argument('--disable-webgl2')
+
 options.add_argument('--disable-blink-features=AutomationControlled')  # Try to avoid detection
 options.add_experimental_option('excludeSwitches', ['enable-automation'])
 options.add_experimental_option('useAutomationExtension', False)
@@ -41,8 +47,8 @@ driver = webdriver.Chrome(options=options)
 
 # URLs to scrape
 urls = [
-    ("https://www.blocket.se/annonser/hela_sverige/datorer_tv-spel/datorer_tillbehor", "computers"),
-    ("https://www.blocket.se/annonser/hela_sverige/fritid_hobby/musikutrustning?cg=6160", "music")
+    ("https://www.tori.fi/recommerce/forsale/search?category=0.93", "computers"),
+    ("https://www.tori.fi/recommerce/forsale/search?sub_category=1.86.92", "instruments")
 ]
 
 def scroll_gradually(driver, pause_time=0.125):
@@ -110,55 +116,49 @@ def scroll_gradually(driver, pause_time=0.125):
 def accept_cookies(driver):
     """Find and click the accept cookies button"""
     try:
-        # print("Looking for cookie consent iframe...")
-        
-        # Wait for the iframe to be present
-        iframe = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, "iframe[id^='sp_message_iframe']"))
-        )
-        
-        # Switch to the iframe context
-        driver.switch_to.frame(iframe)
-        # print("Switched to iframe context")
-        
-        # Look for the accept button within the iframe
+        # First try the Sourcepoint iframe approach
         try:
-            accept_button = WebDriverWait(driver, 5).until(
-                EC.element_to_be_clickable((By.CSS_SELECTOR, "button[title='Godkänn alla cookies']"))
+            # Wait for and switch to the iframe - using partial match for SP iframe
+            iframe = WebDriverWait(driver, 5).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, 
+                    "iframe[title='SP Consent Message'], iframe[id^='sp_message_iframe_']"))
             )
-            # print("Found accept button")
+            driver.switch_to.frame(iframe)
+            
+            # Try to find the accept button
+            accept_button = WebDriverWait(driver, 3).until(
+                EC.element_to_be_clickable((By.CSS_SELECTOR, 
+                    "button[title='Hyväksy kaikki evästeet']"))
+            )
             accept_button.click()
-            # print("Clicked accept button")
-        except Exception as e:
-            print(f"Failed to find/click accept button: {e}")
-        
-        # Switch back to default content
-        driver.switch_to.default_content()
-        # print("Switched back to main context")
-        
-        return True
+            driver.switch_to.default_content()
+            return True
+        except Exception:
+            driver.switch_to.default_content()
+            
+        # Try finding button directly on the page
+        try:
+            accept_button = WebDriverWait(driver, 3).until(
+                EC.element_to_be_clickable((By.CSS_SELECTOR, """
+                    button[class*='cookie'],
+                    button[id*='cookie'],
+                    button[class*='consent'],
+                    #onetrust-accept-btn-handler,
+                    .accept-cookies-button
+                """))
+            )
+            accept_button.click()
+            return True
+        except Exception:
+            pass
+            
+        return False
         
     except Exception as e:
         print(f"Could not handle cookie popup: {e}")
-        # Make sure we're back in the main context
         driver.switch_to.default_content()
         return False
 
-def parse_swedish_time(time_text):
-    """Convert Swedish time text to datetime object"""
-    now = datetime.now()
-    if 'Idag' in time_text:
-        # Extract HH:MM from "Idag HH:MM"
-        time_part = time_text.replace('Idag', '').strip()
-        hour, minute = map(int, time_part.split(':'))
-        return now.replace(hour=hour, minute=minute, second=0, microsecond=0)
-    elif 'Igår' in time_text:
-        # Extract HH:MM from "Igår HH:MM"
-        time_part = time_text.replace('Igår', '').strip()
-        hour, minute = map(int, time_part.split(':'))
-        yesterday = now - timedelta(days=1)
-        return yesterday.replace(hour=hour, minute=minute, second=0, microsecond=0)
-    return None
 
 def convert_sek_to_eur(sek_amount):
     """Convert SEK to EUR using a fixed conversion rate"""
@@ -170,15 +170,15 @@ def clean_price(price_str):
     """Clean price string and convert to number"""
     if not price_str:
         return None
-    # Remove spaces, 'kr', and handle possible thousands separator
-    cleaned = price_str.replace(' ', '').replace('kr', '').replace('\xa0', '')
+    # Remove spaces, '€', commas, and handle possible thousands separator
+    cleaned = price_str.replace(' ', '').replace('€', '').replace(',', '').replace('\xa0', '')
     try:
         return int(cleaned)
     except ValueError:
         return None
 
 def scrape(max_pages=2):
-    """Scrape Blocket listings"""
+    """Scrape Tori listings"""
     all_data = {}
     cookies_handled = False
 
@@ -188,8 +188,10 @@ def scrape(max_pages=2):
 
         while page <= max_pages:
             # print(f"DEBUG: Scraping page {page} of {max_pages}")
-            page_url = f"{main_url}&page={page}" if page > 1 else main_url
-            
+            if "sub_category" in main_url:
+                page_url = f"{main_url.replace('search?', f'search?page={page}&')}" if page > 1 else main_url
+            else:
+                page_url = f"{main_url}&page={page}" if page > 1 else main_url
             # print(f"Scraping {page_url}...")
             
             # Get the page and wait for initial content
@@ -214,94 +216,84 @@ def scrape(max_pages=2):
             articles = page_soup.find_all('article')
             for article in articles:
                 try:
-                    # Add time extraction
-                    time_container = article.find('p', class_=lambda x: x and 'styled__Time' in x)
-                    time_text = time_container.get_text(strip=True) if time_container else None
-                    timestamp = parse_swedish_time(time_text) if time_text else None
-                    
-                    if time_text and 'Igår' in time_text:
-                        found_yesterday = True
-
                     # Get link
-                    link_elem = article.find('a', class_=lambda x: x and 'StyledTitleLink' in x)
+                    link_elem = article.find('a', class_=lambda x: x and 'sf-search-ad-link' in x)
                     link = link_elem.get('href') if link_elem else None
                     
-                    # Get title and translate it
-                    title_container = article.find('span', class_=lambda x: x and 'styled__SubjectContainer' in x)
-                    title = title_container.get_text(strip=True) if title_container else None
-                            
-                    # Get price from Price__StyledPrice and convert to EUR
-                    price_container = article.find('div', class_=lambda x: x and 'Price__StyledPrice' in x)
-                    price_sek = price_container.get_text(strip=True) if price_container else None
-                    price_sek_clean = clean_price(price_sek)
-                    price_eur = convert_sek_to_eur(price_sek_clean) if price_sek_clean is not None else None
-                    
-                    # Get image from picture tag and srcset
-                    picture = article.find('picture')
-                    if picture:
-                        # Try WebP source first, fall back to JPEG
-                        source = picture.find('source', {'type': 'image/webp'}) or picture.find('source', {'type': 'image/jpeg'})
-                        if source:
-                            srcset = source.get('srcset')
-                            if srcset:
-                                # Split srcset and parse into width-url pairs
-                                srcset_items = srcset.split(',')
-                                image_versions = []
-                                for item in srcset_items:
-                                    parts = item.strip().split()
-                                    if len(parts) == 2:
-                                        url, width = parts
-                                        width = int(width.rstrip('w'))
-                                        image_versions.append((url, width))
-                        
-                                # Get URL of highest resolution version
-                                if image_versions:
-                                    largest_image_url = max(image_versions, key=lambda x: x[1])[0]
-                                else:
-                                    largest_image_url = None
-                            else:
-                                print("No srcset found in source")
-                                largest_image_url = None
+                    # Get title and traverse through nested elements to get the deepest text
+                    title_container = article.find('h2', class_=lambda x: x and 'h4' in x)
+                    if title_container:
+                        # Find the deepest text within nested font tags
+                        font_tags = title_container.find_all('font')
+                        if font_tags:
+                            # Get the text from the last (deepest) font tag
+                            title = font_tags[-1].get_text(strip=True)
                         else:
-                            print("No source found in picture")
-                            # Fallback to img tag src if no srcset
-                            img = picture.find('img')
-                            largest_image_url = img.get('src') if img else None
+                            # Fallback to direct text if no font tags
+                            title = title_container.get_text(strip=True)
                     else:
-                        print("No picture tag found")
-                        largest_image_url = None
+                        title = None
+                    
+                    # Initialize the item dictionary first
+                    item = {
+                        'title': {
+                            'original': title,
+                            'english': None
+                        },
+                        'description': None,
+                        'main_image': None,  # Initialize as None
+                        'link': link if link else None,
+                        'price': {
+                            'eur': None  # Changed from 'sek' to 'eur'
+                        },
+                        'timestamp': datetime.now().isoformat(),
+                        'category': category
+                    }
+                    
+                    # Handle price
+                    price_container = article.find('div', class_='text-m')
+                    if price_container and '€' in price_container.text:
+                        price_str = price_container.get_text(strip=True)
+                        item['price']['eur'] = clean_price(price_str.replace('€', ''))
+                    
+                    # Handle image
+                    source = article.find('img')
+                    if source:
+                        srcset = source.get('srcset')
+                        if srcset:
+                            # Split srcset and parse into width-url pairs
+                            srcset_items = srcset.split(',')
+                            image_versions = []
+                            for srcset_item in srcset_items:
+                                parts = srcset_item.strip().split()
+                                if len(parts) == 2:
+                                    url, width = parts
+                                    width = int(width.rstrip('w'))
+                                    image_versions.append((url, width))
+                            
+                            # Get the URL with the highest width
+                            if image_versions:
+                                item['main_image'] = max(image_versions, key=lambda x: x[1])[0]
+                    else:
+                        print("No source found in picture")
 
                     # print(f"Largest image URL: {largest_image_url}")
                     # Initialize page list if not exists
                     if page not in all_data:
                         all_data[page] = []
                     
-                    all_data[page].append({
-                        'title': {
-                            'original': title,
-                            'english': None
-                        },
-                        'description': None,
-                        'main_image': largest_image_url,
-                        'link': ("https://www.blocket.se" + link) if link else None,
-                        'price': {
-                            'sek': price_sek_clean,
-                            'eur': price_eur
-                        },
-                        'timestamp': parse_swedish_time(time_text).isoformat() if time_text else datetime.now().isoformat(),
-                        'category': category
-                    })
+                    all_data[page].append(item)
             
                 except Exception as e:
                     print(f"Error extracting data: {e}")
 
             
             
-            # Count statistics for the current page
+            #Count statistics for the current page
             # page_data = all_data[page]
             # title_count = sum(1 for ad in page_data if ad['title']['original'])
             # url_count = sum(1 for ad in page_data if ad['link'])
-            # price_count = sum(1 for ad in page_data if ad['price']['sek'])
+            # price_count = sum(1 for ad in page_data if ad['price']['eur'])  # Changed from 'sek' to 'eur'
             # image_count = sum(1 for ad in page_data if ad['main_image'])
             
             # print(f"Found {len(page_data)} ads")

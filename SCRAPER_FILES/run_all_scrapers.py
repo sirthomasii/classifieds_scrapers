@@ -2,20 +2,44 @@ import os
 import importlib.util
 import sys
 from SERVICES.translation_service import TranslationService
-from pymongo import MongoClient, UpdateOne
+from SERVICES.upload_service import upload_data_to_mongo
+from SERVICES.database_service import DatabaseService
 import subprocess
 from datetime import datetime
 
-# Define max pages per scraper
-MULTIPLIER = 5
-
+# Define num pages per batch
 SCRAPER_CONFIG = {
-    'blocket': 1*MULTIPLIER,
-    'gumtree': 2*MULTIPLIER,
-    'kleinanzeigen': 2*MULTIPLIER,
-    'olx': 1*MULTIPLIER,
-    'ricardo': 1*MULTIPLIER
+    'kleinanzeigen': 1,
+    'blocket': 1,
+    'gumtree': 1,
+    'tori': 1,
+    # 'olx': 1,
+    # 'ricardo': 1,
+    # 'dba': 1
 }
+
+class ScraperStats:
+    def __init__(self):
+        self.total_ads = 0
+        self.complete_ads = 0  # ads with title, image, and link
+        self.new_ads = 0      # ads successfully inserted into MongoDB
+        self.data = None      # Store the scraped data
+        self.category_stats = {}  # Add category stats storage
+
+def calculate_completeness(data):
+    """Calculate percentage of complete ads (having title, image, and link)"""
+    total_ads = 0
+    complete_ads = 0
+    
+    for page in data.values():
+        for item in page:
+            total_ads += 1
+            if (item.get('link') and 
+                item.get('main_image') and 
+                item.get('title', {}).get('original')):
+                complete_ads += 1
+    
+    return total_ads, complete_ads
 
 def load_scraper(file_path):
     """Dynamically load a Python module from file path"""
@@ -26,84 +50,84 @@ def load_scraper(file_path):
     spec.loader.exec_module(module)
     return module
 
-def upload_to_mongo(site_name, data):
-    """Upload data directly to MongoDB without translation"""
-    try:
-        client = MongoClient("mongodb+srv://sirthomasii:ujvkc8W1eeYP9axW@fleatronics-1.lppod.mongodb.net/?retryWrites=true&w=majority&appName=fleatronics-1")
-        db = client['fleatronics']
-        collection = db['listings']
-
-        # Create a unique compound index
-        collection.create_index([
-            ("link", 1),
-            ("source", 1)
-        ], unique=True)
-
-        # Flatten and prepare data for upsert
-        all_listings = []
-        for page in data.values():
-            for item in page:
-                if item['link']:  # Only process items with valid links
-                    filter_doc = {
-                        "link": item['link'],
-                        "source": site_name
-                    }
-                    # Check if document exists
-                    existing_doc = collection.find_one(filter_doc)
-                    if not existing_doc:
-                        item['last_updated'] = datetime.now().isoformat()
-                        all_listings.append(UpdateOne(
-                            filter_doc,
-                            {'$set': item},
-                            upsert=True
-                        ))
-
-        if all_listings:
-            result = collection.bulk_write(all_listings, ordered=False)
-            print(f"MongoDB update results for {site_name}:")
-            print(f"- Inserted: {result.upserted_count}")
-            print(f"- Skipped (already exists): {len(data) - result.upserted_count}")
-
-    except Exception as e:
-        print(f"Error uploading to MongoDB: {e}")
-    finally:
-        client.close()
+def check_duplicates(db_service, data):
+    """Check percentage of duplicate links in a batch of data"""
+    if not data:
+        return 0
+    
+    # Extract all links from the batch
+    links = []
+    for page in data.values():
+        links.extend(item['link'] for item in page if item.get('link'))
+    
+    return db_service.check_duplicate_links(links)
 
 def run_scraper(scraper_path, translation_service):
-    """Run a single scraper with custom max_pages parameter"""
+    """Run a single scraper"""
+    stats = ScraperStats()
     try:
         site_name = os.path.basename(scraper_path).replace('_scraper.py', '')
         
-        # Get max_pages from config, default to 1 if not specified
-        max_pages = SCRAPER_CONFIG.get(site_name, 1)
+        # Get batch size from config, default to 2 if not specified
+        batch_size = SCRAPER_CONFIG.get(site_name, 2)
         
-        print(f"\n=== Starting {site_name} scraper with max_pages={max_pages} ===")
+        print(f"\n=== Starting {site_name} scraper with batch_size={batch_size} ===")
         
         scraper = load_scraper(scraper_path)
-        data = scraper.scrape(max_pages=max_pages)
+        all_data = scraper.scrape(max_pages=batch_size)
         
-        if not data:
+        # Store the data in stats
+        stats.data = all_data
+        
+        if not all_data:
             print(f"Warning: No data returned from {site_name} scraper")
-            return
+            return stats
             
+        # Calculate completeness stats
+        stats.total_ads, stats.complete_ads = calculate_completeness(all_data)
+        
         # Handle Gumtree separately since it's already in English
         if 'gumtree' in site_name.lower():
-            upload_to_mongo(site_name, data)
+            stats.total_ads, stats.new_ads, stats.complete_ads, stats.category_stats = upload_data_to_mongo(site_name, all_data)
         else:
-            translation_service.add_to_queue(site_name, data)
+            # Store the data for translation and capture new_ads count
+            translation_service.add_to_queue(site_name, all_data)
+            # Initialize stats without uploading
+            stats.total_ads = sum(len(page) for page in all_data.values())
+            stats.complete_ads = sum(1 for page in all_data.values() 
+                                    for item in page 
+                                    if item.get('link') and 
+                                       item.get('main_image') and 
+                                       item.get('title', {}).get('original'))
             
+            # Track categories without uploading
+            for page in all_data.values():
+                for item in page:
+                    category = item.get('category', 'uncategorized')
+                    if category not in stats.category_stats:
+                        stats.category_stats[category] = {'total': 0, 'new': 0, 'complete': 0}
+                    stats.category_stats[category]['total'] += 1
+                    if (item.get('link') and 
+                        item.get('main_image') and 
+                        item.get('title', {}).get('original')):
+                        stats.category_stats[category]['complete'] += 1
+
         print(f"=== Completed scraping for {site_name} ===\n")
+        return stats
         
     except Exception as e:
         print(f"Error in {site_name} scraper: {str(e)}")
         import traceback
         traceback.print_exc()
+        return stats
 
 def main():
+    scraper_results = {}
     # Get the directory containing the scrapers
     scrapers_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'SCRAPERS')
 
     # Find all Python files containing "scraper" in the name, excluding leboncoin
+    # and only include scrapers that are in SCRAPER_CONFIG
     scraper_files = [
         os.path.join(scrapers_dir, f) 
         for f in os.listdir(scrapers_dir)
@@ -111,12 +135,14 @@ def main():
         and 'scraper' in f.lower() 
         and 'leboncoin' not in f.lower()
         and f != '__init__.py'
+        and os.path.splitext(f)[0].replace('_scraper', '') in SCRAPER_CONFIG
     ]
 
-    print(f"Found scrapers: {[os.path.basename(f) for f in scraper_files]}")
-    print(f"Scraper configurations:")
-    for name, pages in SCRAPER_CONFIG.items():
-        print(f"- {name}: {pages} pages")
+    # Print configured scrapers that will be run
+    print("Running scrapers with the following configurations:")
+    for name, batch_size in SCRAPER_CONFIG.items():
+        if any(name in f for f in scraper_files):
+            print(f"- {name}: {batch_size}")
 
     # Initialize translation service
     translation_service = TranslationService()
@@ -124,7 +150,9 @@ def main():
 
     # Run scrapers sequentially
     for scraper_path in scraper_files:
-        run_scraper(scraper_path, translation_service)
+        site_name = os.path.basename(scraper_path).replace('_scraper.py', '')
+        stats = run_scraper(scraper_path, translation_service)
+        scraper_results[site_name] = stats
 
     # Stop translation service and wait for completion
     translation_service.stop()
@@ -133,6 +161,25 @@ def main():
     print("Uploading translated JSONs to MongoDB...")
     subprocess.run(["python", os.path.join(os.path.dirname(os.path.abspath(__file__)), "SERVICES", "upload_service.py")])
     print("Upload completed.")
+
+    # Print final reports
+    print("\n=== Scraper Completeness Report ===")
+    for site, stats in scraper_results.items():
+        if stats.total_ads > 0:
+            completeness = (stats.complete_ads / stats.total_ads) * 100
+            print(f"{site}: {completeness:.1f}% complete ads ({stats.complete_ads}/{stats.total_ads})")
+
+    print("\n=== New Ads Report ===")
+    for site, stats in scraper_results.items():
+        if stats.total_ads > 0:
+            if stats.category_stats:
+                for category, cat_stats in stats.category_stats.items():
+                    if cat_stats['total'] > 0:
+                        new_percentage = (cat_stats['new'] / cat_stats['total']) * 100
+                        print(f"{site} - {category}: {new_percentage:.1f}% new ads ({cat_stats['new']}/{cat_stats['total']})")
+            else:
+                new_percentage = (stats.new_ads / stats.total_ads) * 100
+                print(f"{site}: {new_percentage:.1f}% new ads ({stats.new_ads}/{stats.total_ads})")
 
 if __name__ == "__main__":
     main()

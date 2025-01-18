@@ -8,7 +8,6 @@ import json
 from datetime import datetime, timedelta
 import os
 import random
-from pymongo import MongoClient
 from selenium.webdriver.common.action_chains import ActionChains
 
 # Change to script directory
@@ -40,12 +39,6 @@ def scrape(max_pages=1):
     try:
         driver = init_driver()
         
-        # Initialize MongoDB client
-        client = MongoClient("mongodb+srv://sirthomasii:ujvkc8W1eeYP9axW@fleatronics-1.lppod.mongodb.net/?retryWrites=true&w=majority&appName=fleatronics-1")
-        db = client['fleatronics']
-        collection = db['listings']
-
-        # Move all the existing scraping code here
         # URL to scrape
         main_url = "https://www.olx.ro/electronice-si-electrocasnice/"
         driver.get(main_url)
@@ -221,7 +214,7 @@ def scrape(max_pages=1):
             while page <= max_pages:  # Changed condition to <= instead of >
                 try:
                     page_url = f"{main_url}?page={page}" if page > 1 else main_url
-                    print(f"Scraping {page_url}...")
+                    # print(f"Scraping {page_url}...")
                     
                     driver.get(page_url)
                             
@@ -326,7 +319,7 @@ def scrape(max_pages=1):
                         except Exception as e:
                             print(f"Error processing article {idx + 1}: {str(e)}")
 
-                    print(f"Found {len(page_data_list)} ads")
+                    # print(f"Found {len(page_data_list)} ads")
                     
                     # Store this page's data in the main dictionary
                     all_pages_data[page] = page_data_list
@@ -351,9 +344,6 @@ def scrape(max_pages=1):
                 for listing in page:
                     listing['source'] = 'olx'
                     listing['scraped_at'] = current_time
-
-            # Close MongoDB connection
-            client.close()
 
             return all_pages_data
 

@@ -8,7 +8,6 @@ import time
 import json
 from datetime import datetime, timedelta
 import os
-from pymongo import MongoClient
 
 # Change to script directory
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
@@ -200,7 +199,7 @@ def scrape(max_pages=2):
     while page <= max_pages:
         page_url = f"{main_url}page{page}/" if page > 1 else main_url
         
-        print(f"Scraping {page_url}...")
+        # print(f"Scraping {page_url}...")
         
         try:
             driver.get(page_url)
@@ -283,7 +282,7 @@ def scrape(max_pages=2):
                     print(f"Error processing article: {e}")
                     continue
 
-            print(f"Found {len(page_data_list)} ads")
+            # print(f"Found {len(page_data_list)} ads")
             all_pages_data[page] = page_data_list
             
             time.sleep(2)

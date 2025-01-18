@@ -8,7 +8,6 @@ import json
 from datetime import datetime, timedelta
 import os
 import random
-from pymongo import MongoClient
 
 # Change to script directory
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
@@ -17,12 +16,10 @@ def init_driver():
     """Initialize and return a new driver instance"""
     chrome_options = uc.ChromeOptions()
     chrome_options.add_argument('--disable-gpu')
-    chrome_options.add_argument("--window-size=100,100")
-    chrome_options.add_argument("--start-maximized")
+    chrome_options.add_argument("--window-size=800,600")  # Reasonable default size
     chrome_options.add_argument('--disable-extensions')
     chrome_options.add_argument('--disable-notifications')
     chrome_options.add_argument('--disable-popup-blocking')
-    # chrome_options.add_argument('--window-position=-32000,-32000')
     
     # Create the driver with a timeout
     driver = uc.Chrome(
@@ -31,6 +28,10 @@ def init_driver():
         suppress_welcome=True,        # Suppress welcome message
         use_subprocess=True          # Use subprocess to avoid circular import
     )
+    
+    # Minimize the window after creation
+    # driver.minimize_window()
+    
     return driver
 
 def scrape(max_pages=2):
@@ -38,12 +39,6 @@ def scrape(max_pages=2):
     try:
         driver = init_driver()
         
-        # Initialize MongoDB client
-        client = MongoClient("mongodb+srv://sirthomasii:ujvkc8W1eeYP9axW@fleatronics-1.lppod.mongodb.net/?retryWrites=true&w=majority&appName=fleatronics-1")
-        db = client['fleatronics']
-        collection = db['listings']
-
-        # Move all the existing scraping code here
         # URL to scrape
         main_url = "https://www.ricardo.ch/de/c/computer-netzwerk-39091/"
         driver.get(main_url)
@@ -72,7 +67,7 @@ def scrape(max_pages=2):
 
             def scroll_gradually(driver, pause_time=0.25):
                 """Scroll gradually and ensure images are loaded"""
-                print("\nDEBUG: Starting scroll_gradually...")
+                # print("\nDEBUG: Starting scroll_gradually...")
                 
                 # Initial longer wait for page to stabilize
                 time.sleep(pause_time * 2)
@@ -134,7 +129,7 @@ def scrape(max_pages=2):
                     # Click the accept button
                     accept_button.click()
                     
-                    print("Clicked accept button")
+                    # print("Clicked accept button")
 
                     # Wait for the banner to become invisible instead of checking for staleness
                     WebDriverWait(driver, 10).until(
@@ -195,7 +190,7 @@ def scrape(max_pages=2):
             while page <= max_pages:  # Changed condition to <= instead of >
                 try:
                     page_url = f"{main_url}?page={page}" if page > 1 else main_url
-                    print(f"Scraping {page_url}...")
+                    # print(f"Scraping {page_url}...")
                     
                     driver.get(page_url)
                             
@@ -303,7 +298,7 @@ def scrape(max_pages=2):
                         except Exception as e:
                             print(f"Error processing article {idx + 1}: {str(e)}")
 
-                    print(f"Found {len(page_data_list)} ads")
+                    # print(f"Found {len(page_data_list)} ads")
                     
                     # Store this page's data in the main dictionary
                     all_pages_data[page] = page_data_list
@@ -328,9 +323,6 @@ def scrape(max_pages=2):
                 for listing in page:
                     listing['source'] = 'ricardo'
                     listing['scraped_at'] = current_time
-
-            # Close MongoDB connection
-            client.close()
 
             return all_pages_data
 

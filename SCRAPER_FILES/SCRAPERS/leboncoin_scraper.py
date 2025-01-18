@@ -148,7 +148,7 @@ try:
                       .click()\
                       .perform()
                 
-                print("Clicked accept button")
+                # print("Clicked accept button")
                 
                 # Randomized post-click wait
                 time.sleep(random.uniform(2.0, 5.0))

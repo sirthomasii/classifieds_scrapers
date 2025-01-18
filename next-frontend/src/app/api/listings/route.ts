@@ -6,12 +6,12 @@ const uri = process.env.MONGODB_URI;
 const listingSchema = new mongoose.Schema({
   link: String,
   source: String,
-  description: String,
-  last_updated: Date,
+  // description: String,
+  // last_updated: Date,
   main_image: String,
   timestamp: Date,
   title: {
-    original: String,
+    // original: String,
     english: String
   },
   price: {
@@ -48,6 +48,7 @@ export async function GET() {
     await connectDB();
     
     const listings = await Listing.find({})
+      .select('link source main_image timestamp title.english price.eur')
       .maxTimeMS(5000)
       .lean();
 
