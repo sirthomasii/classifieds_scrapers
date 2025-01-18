@@ -1,6 +1,9 @@
 from pymongo import MongoClient
 from datetime import datetime
 
+# Store last run stats
+_last_run_stats = {'completeness': {}, 'new_ads': {}}
+
 def upload_data_to_mongo(site_name, data):
     """Upload translated data to MongoDB"""
     # Initialize counters
@@ -50,12 +53,18 @@ def upload_data_to_mongo(site_name, data):
         except Exception as e:
             print(f"Error inserting document: {e}")
 
-    # Print stats for each category
-    # for category, stats in category_stats.items():
-    #     new_percentage = (stats['new'] / stats['total'] * 100) if stats['total'] > 0 else 0
-    #     print(f"{site_name} - {category}: {new_percentage:.1f}% new ads ({stats['new']}/{stats['total']})")
+    # Store stats for this run
+    _last_run_stats['completeness'][site_name] = f"{(complete_ads / total_ads * 100):.1f}% complete ads ({complete_ads}/{total_ads})"
+    for category, stats in category_stats.items():
+        site_category = f"{site_name} - {category}"
+        new_percentage = (stats['new'] / stats['total'] * 100) if stats['total'] > 0 else 0
+        _last_run_stats['new_ads'][site_category] = f"{new_percentage:.1f}% new ads ({stats['new']}/{stats['total']})"
 
     client.close()
     return total_ads, new_ads, complete_ads, category_stats
+
+def get_last_run_stats():
+    """Get stats from the last run"""
+    return _last_run_stats['completeness'], _last_run_stats['new_ads']
 
 # This script is now a module and doesn't need a main function
