@@ -25,7 +25,7 @@ export function Viewport({
   const [searchSuggestions, setSearchSuggestions] = useState<string[]>([]);
   const itemsPerPage = 15;
 
-  console.log('Raw marketplaceData:', marketplaceData); // Debug log
+  // console.log('Raw marketplaceData:', marketplaceData); // Debug log
 
   const filteredData = marketplaceData?.all ?? [];
 
@@ -35,8 +35,6 @@ export function Viewport({
     const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
     return timeB - timeA;
   });
-
-  console.log('Filtered data before search:', sortedData); // Debug log
 
   const searchedData = searchQuery 
     ? sortedData.filter(item => {
@@ -65,12 +63,6 @@ export function Viewport({
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
-
-  console.log('Displayed items:', displayedItems.map(item => ({
-    title: item.title,
-    link: item.link,
-    image: item.main_image
-  })));
 
   const isLoading = !marketplaceData;
 
@@ -215,8 +207,9 @@ export function Viewport({
                       alt={item.title?.english || item.title?.original || 'Product image'}
                       width={250}
                       height={180}
+                      priority={index < 3}
                       className={styles.imageLoading}
-                      onLoadingComplete={() => {
+                      onLoad={() => {
                         const img = document.querySelector(`[src="${item.main_image}"]`);
                         img?.classList.remove(styles.imageLoading);
                       }}
