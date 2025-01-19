@@ -17,36 +17,32 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: '**.tori.net',
+        hostname: 'i.blocketcdn.se',
       },
       {
         protocol: 'https',
-        hostname: '**.blocket.se',
+        hostname: 'imagedelivery.net',
       },
       {
         protocol: 'https',
-        hostname: '**.ebay-kleinanzeigen.de',
+        hostname: 'img.kleinanzeigen.de',
       },
       {
         protocol: 'https',
-        hostname: '**.gumtree.com',
+        hostname: 'img.ricardostatic.ch',
       },
       {
         protocol: 'https',
-        hostname: '**.ricardo.ch',
+        hostname: 'frankfurt.apollo.olxcdn.com',
       },
       {
         protocol: 'https',
-        hostname: '**.dba.dk',
+        hostname: 'billeder.dba.dk',
       },
       {
         protocol: 'https',
-        hostname: '**.olx.ro',
+        hostname: 'img.tori.net',
       },
-      {
-        protocol: 'https',
-        hostname: 'images.prismic.io',
-      }
     ],
   },
   

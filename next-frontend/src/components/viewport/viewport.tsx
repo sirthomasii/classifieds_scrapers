@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { Box, Skeleton, Select, Autocomplete } from '@mantine/core';
+import { Box, Skeleton, Select, TextInput } from '@mantine/core';
 import { Publication } from '@/types/publication';
 import styles from './viewport.module.css';
 import Image from 'next/image';
@@ -48,14 +48,18 @@ export function Viewport({
       return timeB - timeA;
     }), [filteredData]);
 
+  // Helper function to get the display title
+  const getDisplayTitle = (item: Publication) => {
+    return item.title?.original;
+  };
+
   // Memoize searched data to prevent unnecessary filtering
   const searchedData = useMemo(() => 
     activeSearch 
       ? sortedData.filter(item => {
-          const englishTitle = item.title?.english?.toLowerCase() || '';
-          const originalTitle = item.title?.original?.toLowerCase() || '';
+          const title = getDisplayTitle(item);
           const searchTerm = activeSearch.toLowerCase();
-          return englishTitle.includes(searchTerm) || originalTitle.includes(searchTerm);
+          return title?.toLowerCase().includes(searchTerm) || false;
         })
       : sortedData,
     [sortedData, activeSearch]
@@ -146,9 +150,10 @@ export function Viewport({
   // Generate search suggestions from titles
   useEffect(() => {
     if (searchQuery.length > 2) {
-      const allTitles = (marketplaceData?.items || []).map(item => 
-        item.title?.english || item.title?.original || ''
-      );
+      const allTitles = (marketplaceData?.items || [])
+        .map(getDisplayTitle)
+        .filter((title): title is string => typeof title === 'string' && title.length > 0);
+      
       // Create a Set to ensure unique values
       const uniqueSuggestions = new Set(allTitles
         .filter(title => 
@@ -228,24 +233,19 @@ export function Viewport({
                 },
               }}
             />
-            <Autocomplete
+            <TextInput
               className={styles.searchBar}
               style={{ flex: 1 }}
               value={searchQuery}
-              onChange={(value) => {
-                setSearchQuery(value);
-                handleSearch(value);
+              onChange={(event) => {
+                setSearchQuery(event.currentTarget.value);
+                handleSearch(event.currentTarget.value);
               }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   handleSearch(searchQuery);
                 }
               }}
-              onOptionSubmit={(value) => {
-                setSearchQuery(value);
-                handleSearch(value);
-              }}
-              data={searchSuggestions}
               placeholder={`Search ${totalItems.toLocaleString()} listings...`}
               leftSection={
                 <IconSearch 
@@ -262,12 +262,6 @@ export function Viewport({
                   '&::placeholder': {
                     color: 'rgba(255, 255, 255, 0.5)',
                   },
-                },
-                dropdown: {
-                  backgroundColor: '#2C2E33',
-                  color: 'white',
-                  borderRadius: '12px',
-                  marginTop: '8px'
                 },
               }}
             />
@@ -308,7 +302,7 @@ export function Viewport({
                   {item.main_image && (
                     <Image
                       src={item.main_image || ''}
-                      alt={item.title?.english || item.title?.original || 'Product image'}
+                      alt={getDisplayTitle(item) || 'Product image'}
                       width={250}
                       height={180}
                       priority={index < 3}
@@ -335,7 +329,7 @@ export function Viewport({
                     marginBottom: '8px',
                     color: 'white'
                   }}>
-                    {item.title?.english || item.title?.original || 'No title'}
+                    {item.title?.original}
                   </div>
                   <div style={{ 
                     fontSize: '14px',

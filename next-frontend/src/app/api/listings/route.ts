@@ -48,7 +48,7 @@ export async function GET() {
     await connectDB();
     
     const listings = await Listing.find({})
-      .select('link source main_image timestamp title.english price.eur')
+      .select('link source main_image timestamp title.english title.original price.eur')
       .maxTimeMS(5000)
       .lean();
 
