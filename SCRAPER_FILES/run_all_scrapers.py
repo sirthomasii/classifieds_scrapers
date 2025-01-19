@@ -9,13 +9,13 @@ from datetime import datetime
 
 # Define num pages per batch
 SCRAPER_CONFIG = {
-    # 'kleinanzeigen': 1,
+    'kleinanzeigen': 2,
     'blocket': 1,
-    # 'gumtree': 1,
-    # 'tori': 1,
-    # 'olx': 1,
-    # 'ricardo': 1,
-    # 'dba': 1
+    'gumtree': 2,
+    'tori': 1,
+    'olx': 1,
+    'ricardo': 1,
+    'dba': 1
 }
 
 class ScraperStats:
@@ -163,23 +163,23 @@ def main():
     print("Upload completed.")
 
     # Print final reports
-    print("\n=== Scraper Completeness Report ===")
-    for site, stats in scraper_results.items():
-        if stats.total_ads > 0:
-            completeness = (stats.complete_ads / stats.total_ads) * 100
-            print(f"{site}: {completeness:.1f}% complete ads ({stats.complete_ads}/{stats.total_ads})")
+    # print("\n=== Scraper Completeness Report ===")
+    # for site, stats in scraper_results.items():
+    #     if stats.total_ads > 0:
+    #         completeness = (stats.complete_ads / stats.total_ads) * 100
+    #         print(f"{site}: {completeness:.1f}% complete ads ({stats.complete_ads}/{stats.total_ads})")
 
-    print("\n=== New Ads Report ===")
-    for site, stats in scraper_results.items():
-        if stats.total_ads > 0:
-            if stats.category_stats:
-                for category, cat_stats in stats.category_stats.items():
-                    if cat_stats['total'] > 0:
-                        new_percentage = (cat_stats['new'] / cat_stats['total']) * 100
-                        print(f"{site} - {category}: {new_percentage:.1f}% new ads ({cat_stats['new']}/{cat_stats['total']})")
-            else:
-                new_percentage = (stats.new_ads / stats.total_ads) * 100
-                print(f"{site}: {new_percentage:.1f}% new ads ({stats.new_ads}/{stats.total_ads})")
+    # print("\n=== New Ads Report ===")
+    # for site, stats in scraper_results.items():
+    #     if stats.total_ads > 0:
+    #         if stats.category_stats:
+    #             for category, cat_stats in stats.category_stats.items():
+    #                 if cat_stats['total'] > 0:
+    #                     new_percentage = (cat_stats['new'] / cat_stats['total']) * 100
+    #                     print(f"{site} - {category}: {new_percentage:.1f}% new ads ({cat_stats['new']}/{cat_stats['total']})")
+    #         else:
+    #             new_percentage = (stats.new_ads / stats.total_ads) * 100
+    #             print(f"{site}: {new_percentage:.1f}% new ads ({stats.new_ads}/{stats.total_ads})")
 
 if __name__ == "__main__":
     main()

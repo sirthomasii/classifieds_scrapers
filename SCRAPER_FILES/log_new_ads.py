@@ -86,6 +86,15 @@ def main():
             
             if not new_ads_data:
                 print("\nWarning: No new ads data was parsed!")
+            else:
+                # Print the actual stats from the upload service
+                print("\n=== Scraper Completeness Report ===")
+                for site, stats in completeness_data.items():
+                    print(f"{site}: {stats}")
+
+                print("\n=== New Ads Report ===")
+                for site, stats in new_ads_data.items():
+                    print(f"{site}: {stats}")
             
             # Add to log with timestamp
             log_entry = {
@@ -103,7 +112,7 @@ def main():
             print("Waiting 30 minutes until next run...")
             
             # Wait 30 minutes
-            time.sleep(5)
+            time.sleep(1200)
             
         except Exception as e:
             print(f"Error in scraper run: {e}")

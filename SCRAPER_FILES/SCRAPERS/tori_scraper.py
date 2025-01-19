@@ -261,19 +261,14 @@ def scrape(max_pages=2):
                     if source:
                         srcset = source.get('srcset')
                         if srcset:
-                            # Split srcset and parse into width-url pairs
-                            srcset_items = srcset.split(',')
-                            image_versions = []
-                            for srcset_item in srcset_items:
-                                parts = srcset_item.strip().split()
-                                if len(parts) == 2:
-                                    url, width = parts
-                                    width = int(width.rstrip('w'))
-                                    image_versions.append((url, width))
-                            
-                            # Get the URL with the highest width
-                            if image_versions:
-                                item['main_image'] = max(image_versions, key=lambda x: x[1])[0]
+                            # Split srcset and get the highest resolution image URL (960w)
+                            srcset_items = [item.strip().split() for item in srcset.split(',')]
+                            # Sort by width (descending) and get the URL of the largest image
+                            sorted_items = sorted(srcset_items, 
+                                key=lambda x: int(x[1].replace('w', '')) if len(x) > 1 else 0, 
+                                reverse=True)
+                            if sorted_items:
+                                item['main_image'] = sorted_items[0][0]
                     else:
                         print("No source found in picture")
 

@@ -1,0 +1,24 @@
+[
+  {
+    "timestamp": "2025-01-19T01:29:11.483628",
+    "completeness": {
+      "blocket": "100.0% complete ads (120/120)",
+      "dba": "100.0% complete ads (38/38)",
+      "gumtree": "88.0% complete ads (44/50)",
+      "kleinanzeigen": "97.0% complete ads (96/99)",
+      "ricardo": "100.0% complete ads (60/60)",
+      "tori": "94.4% complete ads (102/108)"
+    },
+    "new_ads": {
+      "blocket - computers": "100.0% new ads (60/60)",
+      "blocket - music": "100.0% new ads (60/60)",
+      "dba - uncategorized": "68.4% new ads (26/38)",
+      "gumtree - uncategorized": "100.0% new ads (50/50)",
+      "kleinanzeigen - computers": "62.5% new ads (30/48)",
+      "kleinanzeigen - music": "98.0% new ads (50/51)",
+      "ricardo - uncategorized": "13.3% new ads (8/60)",
+      "tori - computers": "100.0% new ads (54/54)",
+      "tori - instruments": "100.0% new ads (54/54)"
+    }
+  }
+]
