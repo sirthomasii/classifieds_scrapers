@@ -1,12 +1,33 @@
 from pymongo import MongoClient
 from datetime import datetime
+from os import getenv
+from dotenv import load_dotenv
 
 # Store last run stats
 _last_run_stats = {'completeness': {}, 'new_ads': {}}
 
+def reset_stats():
+    """Reset the statistics for a new scraper run"""
+    global _last_run_stats
+    _last_run_stats = {'completeness': {}, 'new_ads': {}}
+
 def upload_data_to_mongo(site_name, data):
     """Upload translated data to MongoDB"""
-    # Initialize counters
+    load_dotenv()
+    mongo_uri = getenv('MONGODB_URI')
+    if not mongo_uri:
+        raise ValueError("MONGODB_URI environment variable not set")
+        
+    client = MongoClient(mongo_uri)
+    db = client['fleatronics']
+    collection = db['listings']
+
+    # Create a unique compound index
+    collection.create_index([
+        ("link", 1),
+        ("source", 1)
+    ], unique=True)
+
     total_ads = 0
     new_ads = 0
     complete_ads = 0
@@ -16,16 +37,6 @@ def upload_data_to_mongo(site_name, data):
 
     if not data:
         return total_ads, new_ads, complete_ads
-
-    client = MongoClient("mongodb+srv://sirthomasii:ujvkc8W1eeYP9axW@fleatronics-1.lppod.mongodb.net/?retryWrites=true&w=majority&appName=fleatronics-1")
-    db = client['fleatronics']
-    collection = db['listings']
-
-    # Create a unique compound index
-    collection.create_index([
-        ("link", 1),
-        ("source", 1)
-    ], unique=True)
 
     all_listings = [item for page in data.values() for item in page]
     for item in all_listings:

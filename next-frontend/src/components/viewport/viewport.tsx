@@ -8,7 +8,7 @@ import { MarketplaceData } from '@/types/marketplace';
 import styles from './viewport.module.css';
 import Image from 'next/image';
 import { IconSearch } from '@tabler/icons-react';
-import { GB, CH, DE, RO, SE } from 'country-flag-icons/react/3x2';
+import { GB, DK, FI, CH, DE, RO, SE } from 'country-flag-icons/react/3x2';
 
 interface ViewportProps {
   marketplaceData: { all: Publication[] } | undefined;
@@ -26,7 +26,7 @@ export function Viewport({
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchSuggestions, setSearchSuggestions] = useState<string[]>([]);
-  const itemsPerPage = 12;
+  const itemsPerPage = 15;
 
   console.log('Raw marketplaceData:', marketplaceData); // Debug log
 
@@ -106,6 +106,10 @@ export function Viewport({
         return <RO style={{ width: '14px', marginRight: '4px', verticalAlign: 'middle' }} />;
       case 'blocket':
         return <SE style={{ width: '14px', marginRight: '4px', verticalAlign: 'middle' }} />;
+      case 'tori':
+        return <FI style={{ width: '14px', marginRight: '4px', verticalAlign: 'middle' }} />;
+      case 'dba':
+        return <DK style={{ width: '14px', marginRight: '4px', verticalAlign: 'middle' }} />;
       default:
         return null;
     }
@@ -132,6 +136,8 @@ export function Viewport({
               { value: 'gumtree', label: 'Gumtree' },
               { value: 'kleinanzeigen', label: 'Kleinanzeigen' },
               { value: 'olx', label: 'OLX' },
+              { value: 'dba', label: 'DBA' },
+              { value: 'tori', label: 'Tori' },
               { value: 'ricardo', label: 'Ricardo' },
             ]}
             style={{ width: '200px' }}
@@ -183,8 +189,8 @@ export function Viewport({
 
       <div className={styles.gridContainer}>
         {isLoading ? (
-          // Show 12 skeleton cards while loading
-          Array(12).fill(0).map((_, index) => (
+          // Show 15 skeleton cards while loading
+          Array(15).fill(0).map((_, index) => (
             <div key={index} className={styles.itemCard}>
               <div className={`${styles.imageContainer} ${styles.shimmerLoading}`}>
                 <Skeleton height="100%" radius="sm" className={styles.skeleton} />
@@ -241,7 +247,7 @@ export function Viewport({
                   color: '#4CAF50',
                   marginBottom: '8px'
                 }}>
-                  {typeof item.price?.eur === 'number' ? `${item.price.eur} €` : 'Price not available'}
+                  {typeof item.price?.eur === 'number' ? `${item.price.eur} €` : 'Negotiable'}
                 </div>
                 <div style={{ 
                   fontSize: '12px',
@@ -257,8 +263,8 @@ export function Viewport({
                     display: 'inline-flex',
                     alignItems: 'center'
                   }}>
+                    {item.source}&nbsp;
                     {getFlagComponent(item.source)}
-                    {item.source}
                   </span>
                   {item.timestamp ? new Date(item.timestamp).toLocaleString('en-US', {
                     month: 'short',

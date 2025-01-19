@@ -22,7 +22,7 @@ def init_driver():
     chrome_options.add_argument('--disable-notifications')
     chrome_options.add_argument('--disable-popup-blocking')
     chrome_options.add_argument('--headless')
-    
+    chrome_options.add_argument('--silent')  # Add this line to suppress DevTools messages
     try:
         # Create the driver with a timeout
         driver = uc.Chrome(
@@ -227,14 +227,15 @@ def scrape(max_pages=2):
                             if price_element:
                                 # Extract price text and clean it
                                 price_text = price_element.get_text(strip=True)
-                                # Remove 'kr.' and any whitespace, convert comma to dot, remove thousand separators
                                 try:
+                                    # Remove 'kr.' and any whitespace
                                     cleaned_price = price_text.replace('kr.', '').strip()
-                                    # Replace comma with dot for decimal and remove thousand separators
-                                    cleaned_price = cleaned_price.replace('.', '').replace(',', '.')
+                                    # Remove any thousand separators (commas) first
+                                    cleaned_price = cleaned_price.replace(',', '')
+                                    # Convert to float
                                     price_dkk = float(cleaned_price)
                                     # Convert DKK to EUR (1 DKK ≈ 0.134 EUR as of March 2024)
-                                    price = round(price_dkk * 0.134, 2)
+                                    price = int(price_dkk * 0.134)
                                 except (ValueError, TypeError):
                                     price = None
                             

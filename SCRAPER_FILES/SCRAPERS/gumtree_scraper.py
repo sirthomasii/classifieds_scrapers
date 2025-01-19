@@ -18,7 +18,7 @@ options.add_argument('--headless')  # Enable headless mode
 options.add_argument('--no-sandbox')
 options.add_argument('--disable-dev-shm-usage')
 # options.add_argument('--start-maximized')  # Start with maximized window
-
+options.add_argument('--silent')  # Add this line to suppress DevTools messages
 options.add_argument('--disable-blink-features=AutomationControlled')  # Try to avoid detection
 options.add_experimental_option('excludeSwitches', ['enable-automation'])
 options.add_experimental_option('useAutomationExtension', False)
@@ -138,48 +138,14 @@ def accept_cookies(driver):
         print(f"Could not handle cookie popup: {e}")
         return False
 
-def parse_time_text(time_text):
-    """Convert relative time text to datetime object"""
-    if not time_text:
-        return None
-        
-    now = datetime.now()
-    time_text = time_text.lower().strip()
-    
-    # Handle "just now"
-    if "just now" in time_text:
-        return now
-    
-    # Handle "X min/minutes ago"
-    if "min" in time_text:
-        minutes = int(''.join(filter(str.isdigit, time_text)))
-        return now - timedelta(minutes=minutes)
-    
-    # Handle "X hour(s) ago"
-    if "hour" in time_text:
-        hours = int(''.join(filter(str.isdigit, time_text)))
-        return now - timedelta(hours=hours)
-        
-    # Handle "Today HH:MM"
-    if "today" in time_text:
-        time_part = time_text.replace('today', '').strip()
-        hour, minute = map(int, time_part.split(':'))
-        return now.replace(hour=hour, minute=minute, second=0, microsecond=0)
-        
-    # Handle "Yesterday HH:MM"
-    if "yesterday" in time_text:
-        time_part = time_text.replace('yesterday', '').strip()
-        hour, minute = map(int, time_part.split(':'))
-        yesterday = now - timedelta(days=1)
-        return yesterday.replace(hour=hour, minute=minute, second=0, microsecond=0)
-    
-    return None
-
 def convert_gbp_to_eur(gbp_amount):
     """Convert GBP to EUR using a fixed conversion rate"""
+    if gbp_amount is None:
+        return None
     # Using an approximate conversion rate (you might want to use an API for real-time rates)
     GBP_TO_EUR_RATE = 1.17
-    return int(gbp_amount * GBP_TO_EUR_RATE)
+    # Round to nearest integer for final EUR amount
+    return int(round(gbp_amount * GBP_TO_EUR_RATE))
 
 def clean_price(price_str):
     """Clean price string and convert to number"""
@@ -188,7 +154,10 @@ def clean_price(price_str):
     # Remove £ symbol and any spaces, commas
     cleaned = price_str.replace('£', '').replace(' ', '').replace(',', '')
     try:
-        return int(cleaned)
+        # Convert to float first to handle decimal prices
+        float_price = float(cleaned)
+        # Convert to pence/cents (integer) to avoid floating point issues
+        return round(float_price, 2)
     except ValueError:
         return None
 
@@ -258,7 +227,6 @@ def scrape(max_pages=2):
 
                     # Get time text
                     time_container = article.find('div', attrs={'data-q': 'tile-date'})
-                    time_text = time_container.get_text(strip=True) if time_container else None
 
                     if not is_featured:
                         page_data_list.append({
@@ -273,7 +241,7 @@ def scrape(max_pages=2):
                                 'gbp': price_gbp_clean,
                                 'eur': price_eur
                             },
-                            'timestamp': parse_time_text(time_text).isoformat() if time_text else datetime.now().isoformat(),
+                            'timestamp': datetime.now().isoformat(),
                             'source': 'gumtree',
                             'scraped_at': datetime.now().isoformat()
                         })

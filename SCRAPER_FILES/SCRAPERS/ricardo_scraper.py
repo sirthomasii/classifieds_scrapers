@@ -20,7 +20,8 @@ def init_driver():
     chrome_options.add_argument('--disable-extensions')
     chrome_options.add_argument('--disable-notifications')
     chrome_options.add_argument('--disable-popup-blocking')
-    
+    chrome_options.add_argument('--silent')  # Add this line to suppress DevTools messages
+
     # Create the driver with a timeout
     driver = uc.Chrome(
         options=chrome_options,

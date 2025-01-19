@@ -20,7 +20,7 @@ def init_driver():
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
     # options.add_argument('--start-maximized')  # Start with maximized window
-
+    options.add_argument('--silent')  # Add this line to suppress DevTools messages
     options.add_argument('--disable-blink-features=AutomationControlled')  # Try to avoid detection
     options.add_experimental_option('excludeSwitches', ['enable-automation'])
     options.add_experimental_option('useAutomationExtension', False)
@@ -102,29 +102,6 @@ def accept_cookies(driver):
         print(f"Could not handle cookie popup: {e}")
         return False
 
-def parse_time(time_text):
-    """Convert time formats to datetime object"""
-    now = datetime.now()
-    
-    if not time_text:
-        return None
-        
-    time_text = time_text.lower()
-    
-    if 'heute' in time_text:
-        # Extract HH:MM from "heute, HH:MM"
-        time_part = time_text.replace('heute,', '').strip()
-        hour, minute = map(int, time_part.split(':'))
-        return now.replace(hour=hour, minute=minute, second=0, microsecond=0)
-    elif 'gestern' in time_text:
-        # Handle "gestern, HH:MM" format
-        time_part = time_text.replace('gestern,', '').strip()
-        hour, minute = map(int, time_part.split(':'))
-        yesterday = now - timedelta(days=1)
-        return yesterday.replace(hour=hour, minute=minute, second=0, microsecond=0)
-    
-    return None
-
 def clean_price(price_str):
     """Clean price string and convert to number"""
     if not price_str:
@@ -190,15 +167,6 @@ def scrape(max_pages=2):
                             featured_div = article.find('div', string='Featured')
                             is_featured = featured_div is not None
                             
-                            # Locate the parent container of the time
-                            time_container = article.find('div', class_='aditem-main--top--right')
-                            time_text = time_container.get_text(strip=True) if time_container else None
-                            timestamp = parse_time(time_text) if time_text else None
-                            
-                            # Check if this post is from yesterday or earlier
-                            if timestamp and timestamp.date() < datetime.now().date():
-                                found_yesterday = True
-
                             # Get link
                             link_elem = article.find('a', class_=lambda x: x and 'ellipsis' in x)
                             link = link_elem.get('href') if link_elem else None
@@ -238,7 +206,7 @@ def scrape(max_pages=2):
                                     'price': {
                                         'eur': price
                                     },
-                                    'timestamp': timestamp.isoformat() if timestamp else datetime.now().isoformat(),
+                                    'timestamp': datetime.now().isoformat(),
                                     'category': category
                                 })
                             

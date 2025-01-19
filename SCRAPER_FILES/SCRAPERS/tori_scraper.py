@@ -36,6 +36,7 @@ options.add_argument('--disable-gpu')
 options.add_argument("--log-level=3")
 options.add_argument('--ignore-certificate-errors')
 options.add_argument('--enable-unsafe-swiftshader')
+options.add_argument('--silent')  # Add this line to suppress DevTools messages
 
 # Add these new options to clear cache and cookies
 options.add_argument('--incognito')  # Use incognito mode

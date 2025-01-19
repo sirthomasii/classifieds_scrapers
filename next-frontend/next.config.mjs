@@ -39,6 +39,10 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'billeder.dba.dk',
       },
+      {
+        protocol: 'https',
+        hostname: 'img.tori.net',
+      },
     ],
   },
   

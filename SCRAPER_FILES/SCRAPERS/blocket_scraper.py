@@ -17,7 +17,7 @@ options = webdriver.ChromeOptions()
 options.add_argument('--headless')  # Enable headless mode
 options.add_argument('--no-sandbox')
 options.add_argument('--disable-dev-shm-usage')
-
+options.add_argument('--silent')  # Add this line to suppress DevTools messages
 options.add_argument('--disable-blink-features=AutomationControlled')  # Try to avoid detection
 options.add_experimental_option('excludeSwitches', ['enable-automation'])
 options.add_experimental_option('useAutomationExtension', False)
@@ -144,22 +144,6 @@ def accept_cookies(driver):
         driver.switch_to.default_content()
         return False
 
-def parse_swedish_time(time_text):
-    """Convert Swedish time text to datetime object"""
-    now = datetime.now()
-    if 'Idag' in time_text:
-        # Extract HH:MM from "Idag HH:MM"
-        time_part = time_text.replace('Idag', '').strip()
-        hour, minute = map(int, time_part.split(':'))
-        return now.replace(hour=hour, minute=minute, second=0, microsecond=0)
-    elif 'Igår' in time_text:
-        # Extract HH:MM from "Igår HH:MM"
-        time_part = time_text.replace('Igår', '').strip()
-        hour, minute = map(int, time_part.split(':'))
-        yesterday = now - timedelta(days=1)
-        return yesterday.replace(hour=hour, minute=minute, second=0, microsecond=0)
-    return None
-
 def convert_sek_to_eur(sek_amount):
     """Convert SEK to EUR using a fixed conversion rate"""
     # Using an approximate conversion rate (you might want to use an API for real-time rates)
@@ -214,13 +198,6 @@ def scrape(max_pages=2):
             articles = page_soup.find_all('article')
             for article in articles:
                 try:
-                    # Add time extraction
-                    time_container = article.find('p', class_=lambda x: x and 'styled__Time' in x)
-                    time_text = time_container.get_text(strip=True) if time_container else None
-                    timestamp = parse_swedish_time(time_text) if time_text else None
-                    
-                    if time_text and 'Igår' in time_text:
-                        found_yesterday = True
 
                     # Get link
                     link_elem = article.find('a', class_=lambda x: x and 'StyledTitleLink' in x)
@@ -288,7 +265,7 @@ def scrape(max_pages=2):
                             'sek': price_sek_clean,
                             'eur': price_eur
                         },
-                        'timestamp': parse_swedish_time(time_text).isoformat() if time_text else datetime.now().isoformat(),
+                        'timestamp': datetime.now().isoformat(),
                         'category': category
                     })
             

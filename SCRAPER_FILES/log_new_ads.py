@@ -66,16 +66,21 @@ def main():
     # Save log file in logs directory
     log_file = os.path.join(logs_dir, "scraper_stats.json")
     
-    # Load existing log if it exists
-    if os.path.exists(log_file):
+    # Load existing log if it exists and is not empty
+    try:
         with open(log_file, 'r') as f:
-            log_data = json.load(f)
-    else:
+            content = f.read()
+            log_data = json.loads(content) if content.strip() else []
+    except (json.JSONDecodeError, FileNotFoundError):
         log_data = []
     
     while True:
         try:
             print(f"\n=== Starting scraper run at {datetime.now().isoformat()} ===")
+            
+            # Reset the upload service stats before running scrapers
+            from SERVICES.upload_service import reset_stats
+            reset_stats()
             
             # Run scrapers
             run_scrapers()
@@ -109,10 +114,10 @@ def main():
                 json.dump(log_data, f, indent=2)
             
             print(f"Logged data at {log_entry['timestamp']}")
-            print("Waiting 30 minutes until next run...")
+            print("Waiting 2 minutes until next run...")
             
             # Wait 30 minutes
-            time.sleep(1200)
+            time.sleep(120)
             
         except Exception as e:
             print(f"Error in scraper run: {e}")

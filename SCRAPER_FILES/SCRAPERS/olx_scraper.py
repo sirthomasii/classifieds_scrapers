@@ -24,7 +24,7 @@ def init_driver():
     chrome_options.add_argument('--disable-popup-blocking')
     # chrome_options.add_argument('--window-position=-32000,-32000')
     chrome_options.add_argument('--headless')  # Enable headless mode
-
+    chrome_options.add_argument('--silent')  # Add this line to suppress DevTools messages
     # Create the driver with a timeout
     driver = uc.Chrome(
         options=chrome_options,

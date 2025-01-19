@@ -1,8 +1,15 @@
 from pymongo import MongoClient
+from os import getenv
+from dotenv import load_dotenv
 
 class DatabaseService:
     def __init__(self):
-        self.client = MongoClient("mongodb+srv://sirthomasii:ujvkc8W1eeYP9axW@fleatronics-1.lppod.mongodb.net/?retryWrites=true&w=majority&appName=fleatronics-1")
+        load_dotenv()
+        mongo_uri = getenv('MONGODB_URI')
+        if not mongo_uri:
+            raise ValueError("MONGODB_URI environment variable not set")
+            
+        self.client = MongoClient(mongo_uri)
         self.db = self.client['fleatronics']
         self.collection = self.db['listings']
 
