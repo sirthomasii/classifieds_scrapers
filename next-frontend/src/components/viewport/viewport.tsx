@@ -50,7 +50,8 @@ export function Viewport({
 
   // Helper function to get the display title
   const getDisplayTitle = (item: Publication) => {
-    return item.title?.original;
+    if (!item.title) return '';
+    return item.title.english || item.title.original || '';
   };
 
   // Memoize searched data to prevent unnecessary filtering
@@ -59,7 +60,7 @@ export function Viewport({
       ? sortedData.filter(item => {
           const title = getDisplayTitle(item);
           const searchTerm = activeSearch.toLowerCase();
-          return title?.toLowerCase().includes(searchTerm) || false;
+          return title && title.toLowerCase().includes(searchTerm);
         })
       : sortedData,
     [sortedData, activeSearch]
@@ -335,7 +336,7 @@ export function Viewport({
                     marginBottom: '8px',
                     color: 'white'
                   }}>
-                    {item.title?.original}
+                    {item.title?.english || item.title?.original}
                   </div>
                   <div style={{ 
                     fontSize: '14px',
