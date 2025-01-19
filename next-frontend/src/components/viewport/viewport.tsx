@@ -278,8 +278,8 @@ export function Viewport({
           ref={gridRef} 
           className={styles.gridContainer}
           style={{
-            opacity: isSearching ? 0.7 : 1,
-            transition: 'opacity 0.2s ease-in-out'
+            opacity: isSearching ? 0.8 : 1,
+            transition: 'opacity 0.5s ease-in-out'
           }}
         >
           {isLoading ? (
