@@ -16,8 +16,16 @@ body {
   font-family: Arial, Helvetica, sans-serif;
   position: relative;
   z-index: 1;
-  overflow-y: auto; /* Changed from hidden to auto */
-  overflow-x: hidden;
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  overflow: hidden;
+}
+
+html {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
 }
 
 /* Animated metallic background */

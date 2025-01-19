@@ -191,7 +191,7 @@ export function Viewport({
 
   return (
     <>
-      <Box p="md" style={{ maxHeight: '100vh', overflowY: 'auto' }}>
+      <Box style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
         <div style={{ 
           padding: '16px',
           display: 'flex',
@@ -269,143 +269,145 @@ export function Viewport({
           </div>
         </div>
 
-        <div 
-          ref={gridRef} 
-          className={styles.gridContainer}
-          style={{
-            opacity: isSearching ? 0.8 : 1,
-            transition: 'opacity 0.5s ease-in-out'
-          }}
-        >
-          {isLoading ? (
-            // Show 15 skeleton cards while loading
-            Array(15).fill(0).map((_, index) => (
-              <div key={index} className={styles.itemCard}>
-                <div className={`${styles.imageContainer} ${styles.shimmerLoading}`}>
-                  <Skeleton height="100%" radius="sm" className={styles.skeleton} />
-                </div>
-                <div className={styles.itemContent}>
-                  <Skeleton height={20} width="80%" mb={8} className={styles.skeleton} />
-                  <Skeleton height={16} width="40%" mb={8} className={styles.skeleton} />
-                  <Skeleton height={14} width="60%" mb={4} className={styles.skeleton} />
-                  <Skeleton height={12} width="30%" className={styles.skeleton} />
-                </div>
-              </div>
-            ))
-          ) : (
-            displayedItems.map((item, index) => (
-              <div 
-                key={`${item.link}-${index}`}
-                className={styles.itemCard}
-                onClick={() => item.link && window.open(item.link, '_blank')}
-              >
-                <div className={styles.imageContainer}>
-                  {item.main_image && (
-                    <img
-                      src={item.main_image}
-                      alt={getDisplayTitle(item) || 'Product image'}
-                      className={styles.imageLoading}
-                      onError={(e) => {
-                        const imgElement = e.target as HTMLImageElement;
-                        imgElement.style.display = 'none';
-                        const container = imgElement.parentElement;
-                        if (container) {
-                          container.style.backgroundColor = '#333';
-                        }
-                      }}
-                      onLoad={(e) => {
-                        const imgElement = e.target as HTMLImageElement;
-                        imgElement.style.display = 'block';
-                        imgElement.classList.remove(styles.imageLoading);
-                      }}
-                      style={{ 
-                        objectFit: 'cover',
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        width: '100%',
-                        height: '100%'
-                      }}
-                    />
-                  )}
-                </div>
-                <div className={styles.itemContent}>
-                  <div style={{ 
-                    fontSize: '16px', 
-                    fontWeight: 'bold',
-                    marginBottom: '8px',
-                    color: 'white'
-                  }}>
-                    {item.title?.english || item.title?.original}
+        <div style={{ flex: 1, overflowY: 'auto', position: 'relative' }}>
+          <div 
+            ref={gridRef} 
+            className={styles.gridContainer}
+            style={{
+              opacity: isSearching ? 0.8 : 1,
+              transition: 'opacity 0.5s ease-in-out'
+            }}
+          >
+            {isLoading ? (
+              // Show 15 skeleton cards while loading
+              Array(15).fill(0).map((_, index) => (
+                <div key={index} className={styles.itemCard}>
+                  <div className={`${styles.imageContainer} ${styles.shimmerLoading}`}>
+                    <Skeleton height="100%" radius="sm" className={styles.skeleton} />
                   </div>
-                  <div style={{ 
-                    fontSize: '14px',
-                    color: '#4CAF50',
-                    marginBottom: '8px'
-                  }}>
-                    {typeof item.price?.eur === 'number' ? `${item.price.eur} €` : 'Negotiable'}
+                  <div className={styles.itemContent}>
+                    <Skeleton height={20} width="80%" mb={8} className={styles.skeleton} />
+                    <Skeleton height={16} width="40%" mb={8} className={styles.skeleton} />
+                    <Skeleton height={14} width="60%" mb={4} className={styles.skeleton} />
+                    <Skeleton height={12} width="30%" className={styles.skeleton} />
                   </div>
-                  <div style={{ 
-                    fontSize: '12px',
-                    color: '#aaa',
-                    marginBottom: '4px'
-                  }}>
-                    <span style={{ 
-                      backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                      padding: '2px 6px',
-                      borderRadius: '4px',
-                      marginRight: '8px',
-                      textTransform: 'capitalize',
-                      display: 'inline-flex',
-                      alignItems: 'center'
+                </div>
+              ))
+            ) : (
+              displayedItems.map((item, index) => (
+                <div 
+                  key={`${item.link}-${index}`}
+                  className={styles.itemCard}
+                  onClick={() => item.link && window.open(item.link, '_blank')}
+                >
+                  <div className={styles.imageContainer}>
+                    {item.main_image && (
+                      <img
+                        src={item.main_image}
+                        alt={getDisplayTitle(item) || 'Product image'}
+                        className={styles.imageLoading}
+                        onError={(e) => {
+                          const imgElement = e.target as HTMLImageElement;
+                          imgElement.style.display = 'none';
+                          const container = imgElement.parentElement;
+                          if (container) {
+                            container.style.backgroundColor = '#333';
+                          }
+                        }}
+                        onLoad={(e) => {
+                          const imgElement = e.target as HTMLImageElement;
+                          imgElement.style.display = 'block';
+                          imgElement.classList.remove(styles.imageLoading);
+                        }}
+                        style={{ 
+                          objectFit: 'cover',
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          width: '100%',
+                          height: '100%'
+                        }}
+                      />
+                    )}
+                  </div>
+                  <div className={styles.itemContent}>
+                    <div style={{ 
+                      fontSize: '16px', 
+                      fontWeight: 'bold',
+                      marginBottom: '8px',
+                      color: 'white'
                     }}>
-                      {item.source}&nbsp;
-                      {getFlagComponent(item.source)}
-                    </span>
-                    {item.timestamp ? new Date(item.timestamp).toLocaleString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                      hour12: false
-                    }) : 'No date'}
+                      {item.title?.english || item.title?.original}
+                    </div>
+                    <div style={{ 
+                      fontSize: '14px',
+                      color: '#4CAF50',
+                      marginBottom: '8px'
+                    }}>
+                      {typeof item.price?.eur === 'number' ? `${item.price.eur} €` : 'Negotiable'}
+                    </div>
+                    <div style={{ 
+                      fontSize: '12px',
+                      color: '#aaa',
+                      marginBottom: '4px'
+                    }}>
+                      <span style={{ 
+                        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                        padding: '2px 6px',
+                        borderRadius: '4px',
+                        marginRight: '8px',
+                        textTransform: 'capitalize',
+                        display: 'inline-flex',
+                        alignItems: 'center'
+                      }}>
+                        {item.source}&nbsp;
+                        {getFlagComponent(item.source)}
+                      </span>
+                      {item.timestamp ? new Date(item.timestamp).toLocaleString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: false
+                      }) : 'No date'}
+                    </div>
                   </div>
                 </div>
+              ))
+            )}
+          </div>
+
+          {totalPages > 1 && (
+            <div className={styles.paginationContainer}>
+              <div className={styles.paginationWrapper}>
+                {[...Array(totalPages)].map((_, i) => {
+                  // Show current page, 2 before and 2 after
+                  const shouldShow = 
+                    i === 0 || // First page
+                    i === totalPages - 1 || // Last page
+                    (i >= currentPage - 2 && i <= currentPage + 2); // Current range
+                  
+                  if (!shouldShow) {
+                    if (i === currentPage - 3 || i === currentPage + 3) {
+                      return <span key={i} style={{ color: 'white' }}>...</span>;
+                    }
+                    return null;
+                  }
+                  
+                  return (
+                    <button
+                      key={i}
+                      onClick={() => setCurrentPage(i + 1)}
+                      className={currentPage === i + 1 ? styles.paginationButtonActive : styles.paginationButton}
+                    >
+                      {i + 1}
+                    </button>
+                  );
+                })}
               </div>
-            ))
+            </div>
           )}
         </div>
-
-        {totalPages > 1 && (
-          <div className={styles.paginationContainer}>
-            <div className={styles.paginationWrapper}>
-              {[...Array(totalPages)].map((_, i) => {
-                // Show current page, 2 before and 2 after
-                const shouldShow = 
-                  i === 0 || // First page
-                  i === totalPages - 1 || // Last page
-                  (i >= currentPage - 2 && i <= currentPage + 2); // Current range
-                
-                if (!shouldShow) {
-                  if (i === currentPage - 3 || i === currentPage + 3) {
-                    return <span key={i} style={{ color: 'white' }}>...</span>;
-                  }
-                  return null;
-                }
-                
-                return (
-                  <button
-                    key={i}
-                    onClick={() => setCurrentPage(i + 1)}
-                    className={currentPage === i + 1 ? styles.paginationButtonActive : styles.paginationButton}
-                  >
-                    {i + 1}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
       </Box>
     </>
   );
