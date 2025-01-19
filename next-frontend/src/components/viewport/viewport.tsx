@@ -90,12 +90,12 @@ export function Viewport({
     if (!isSearching && gridRef.current) {
       resizeTimeoutRef.current = setTimeout(() => {
         if (gridRef.current) {
+          // Instead of toggling display, use a transform to force a new stacking context
+          gridRef.current.style.transform = 'translateZ(0)';
           requestAnimationFrame(() => {
-            gridRef.current!.style.display = 'none';
-            // Force reflow
-            // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-            gridRef.current!.offsetHeight;
-            gridRef.current!.style.display = 'grid';
+            if (gridRef.current) {
+              gridRef.current.style.transform = '';
+            }
           });
         }
       }, 100);
