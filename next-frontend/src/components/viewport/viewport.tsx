@@ -72,11 +72,13 @@ export function Viewport({
       const allTitles = (marketplaceData?.all || []).map(item => 
         item.title?.english || item.title?.original || ''
       );
-      const suggestions = allTitles
+      // Create a Set to ensure unique values
+      const uniqueSuggestions = new Set(allTitles
         .filter(title => 
           title.toLowerCase().includes(searchQuery.toLowerCase())
-        )
-        .slice(0, 5);
+        ));
+      // Convert back to array and take first 5
+      const suggestions = Array.from(uniqueSuggestions).slice(0, 5);
       setSearchSuggestions(suggestions);
     } else {
       setSearchSuggestions([]);
