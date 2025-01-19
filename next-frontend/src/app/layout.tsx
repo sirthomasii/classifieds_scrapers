@@ -1,5 +1,6 @@
 import RootLayoutClient from './layout-client'
 import { Metadata } from 'next'
+import Script from 'next/script'
 
 export const metadata: Metadata = {
   title: 'Fleatronics - Find Used Electronics & Music Equipment Across Europe',
@@ -32,6 +33,21 @@ export default function RootLayout({
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4841275450464973"
           crossOrigin="anonymous"
         />
+        <Script
+          strategy="afterInteractive"
+          src="https://www.googletagmanager.com/gtag/js?id=G-WR4PYMCQDP"
+        />
+        <Script
+          id="google-analytics"
+          strategy="afterInteractive"
+        >
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-WR4PYMCQDP');
+          `}
+        </Script>
       </head>
       <RootLayoutClient>
         {children}
