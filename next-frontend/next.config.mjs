@@ -14,36 +14,16 @@ const nextConfig = {
   },
 
   images: {
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'i.blocketcdn.se',
-      },
-      {
-        protocol: 'https',
-        hostname: 'imagedelivery.net',
-      },
-      {
-        protocol: 'https',
-        hostname: 'img.kleinanzeigen.de',
-      },
-      {
-        protocol: 'https',
-        hostname: 'img.ricardostatic.ch',
-      },
-      {
-        protocol: 'https',
-        hostname: 'frankfurt.apollo.olxcdn.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'billeder.dba.dk',
-      },
-      {
-        protocol: 'https',
-        hostname: 'img.tori.net',
-      },
+    domains: [
+      'img.tori.net',
+      'i.blocketcdn.se',
+      'imagedelivery.net',
+      'img.kleinanzeigen.de',
+      'img.ricardostatic.ch',
+      'frankfurt.apollo.olxcdn.com',
+      'billeder.dba.dk'
     ],
+    unoptimized: true,
   },
   
   async rewrites() {
@@ -51,7 +31,7 @@ const nextConfig = {
       {
         source: '/api/:path*',
         destination: 'http://localhost:5000/api/:path*', // Proxy to Flask API
-      },
+      }
     ];
   },
 };

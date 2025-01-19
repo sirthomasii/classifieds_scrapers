@@ -300,16 +300,22 @@ export function Viewport({
               >
                 <div className={styles.imageContainer}>
                   {item.main_image && (
-                    <Image
-                      src={item.main_image || ''}
+                    <img
+                      src={item.main_image}
                       alt={getDisplayTitle(item) || 'Product image'}
-                      width={250}
-                      height={180}
-                      priority={index < 3}
                       className={styles.imageLoading}
-                      onLoad={() => {
-                        const img = document.querySelector(`[src="${item.main_image}"]`);
-                        img?.classList.remove(styles.imageLoading);
+                      onError={(e) => {
+                        const imgElement = e.target as HTMLImageElement;
+                        imgElement.style.display = 'none';
+                        const container = imgElement.parentElement;
+                        if (container) {
+                          container.style.backgroundColor = '#333';
+                        }
+                      }}
+                      onLoad={(e) => {
+                        const imgElement = e.target as HTMLImageElement;
+                        imgElement.style.display = 'block';
+                        imgElement.classList.remove(styles.imageLoading);
                       }}
                       style={{ 
                         objectFit: 'cover',
