@@ -123,11 +123,7 @@ export function Viewport({
         <meta property="og:type" content="website" />
         <meta name="robots" content="index, follow" />
         <link rel="canonical" href="https://fleatronics.com" />
-        <script 
-          async 
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4841275450464973"
-          crossOrigin="anonymous"
-        />
+        <meta name="google-adsense-account" content="ca-pub-4841275450464973"/>
       </Head>
       <Box p="md" style={{ maxHeight: '100vh', overflowY: 'auto' }}>
         <div style={{ 
