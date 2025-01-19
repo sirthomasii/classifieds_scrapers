@@ -138,6 +138,9 @@ def main():
         and os.path.splitext(f)[0].replace('_scraper', '') in SCRAPER_CONFIG
     ]
 
+    # Sort scraper_files to ensure kleinanzeigen runs first
+    scraper_files.sort(key=lambda x: 0 if 'kleinanzeigen' in x.lower() else 1)
+
     # Print configured scrapers that will be run
     print("Running scrapers with the following configurations:")
     for name, batch_size in SCRAPER_CONFIG.items():

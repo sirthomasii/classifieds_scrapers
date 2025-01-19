@@ -1,33 +1,34 @@
-'use client'
+import RootLayoutClient from './layout-client'
+import { Metadata } from 'next'
 
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { MantineProvider } from '@mantine/core'
-import { useState } from 'react'
-import '@mantine/core/styles.css'
-import './globals.css'
-import MatrixBackground from '../components/MatrixBackground'
+export const metadata: Metadata = {
+  title: 'Fleatronics - Find Used Electronics & Music Equipment Across Europe',
+  description: 'Search for used electronics, music instruments, and audio equipment across multiple European marketplaces. Find the best deals on second-hand gear.',
+  keywords: 'used electronics, second hand, music equipment, audio gear, musical instruments, European marketplaces, used synthesizers, audio equipment, music gear',
+  openGraph: {
+    title: 'Fleatronics - Used Electronics & Music Equipment Finder',
+    description: 'Search across European marketplaces for used electronics and music equipment. Compare prices and find the best deals.',
+    type: 'website',
+  },
+  robots: 'index, follow',
+  alternates: {
+    canonical: 'https://fleatronics.com'
+  },
+  verification: {
+    google: 'ca-pub-4841275450464973'
+  }
+}
 
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const [queryClient] = useState(() => new QueryClient())
-
   return (
     <html lang="en">
-      <head>
-      <link rel="icon" href="/favicon.ico" />
-      </head>
-
-      <body>
-        <MatrixBackground />
-        <QueryClientProvider client={queryClient}>
-          <MantineProvider>
-            {children}
-          </MantineProvider>
-        </QueryClientProvider>
-      </body>
+      <RootLayoutClient>
+        {children}
+      </RootLayoutClient>
     </html>
   )
 }

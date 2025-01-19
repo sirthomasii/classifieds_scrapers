@@ -114,17 +114,6 @@ export function Viewport({
 
   return (
     <>
-      <Head>
-        <title>Fleatronics - Find Used Electronics & Music Equipment Across Europe</title>
-        <meta name="description" content="Search for used electronics, music instruments, and audio equipment across multiple European marketplaces. Find the best deals on second-hand gear." />
-        <meta name="keywords" content="used electronics, second hand, music equipment, audio gear, musical instruments, European marketplaces, used synthesizers, audio equipment, music gear" />
-        <meta property="og:title" content="Fleatronics - Used Electronics & Music Equipment Finder" />
-        <meta property="og:description" content="Search across European marketplaces for used electronics and music equipment. Compare prices and find the best deals." />
-        <meta property="og:type" content="website" />
-        <meta name="robots" content="index, follow" />
-        <link rel="canonical" href="https://fleatronics.com" />
-        <meta name="google-adsense-account" content="ca-pub-4841275450464973"/>
-      </Head>
       <Box p="md" style={{ maxHeight: '100vh', overflowY: 'auto' }}>
         <div style={{ 
           padding: '16px',
