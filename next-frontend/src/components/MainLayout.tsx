@@ -27,7 +27,11 @@ interface MarketplaceData {
   }>;
 }
 
-export function MainLayout({ children, initialMarketplace = 'all', initialCategory = null }: MainLayoutProps) {
+export function MainLayout({
+  children,
+  initialMarketplace = 'all',
+  initialCategory = null,
+}: MainLayoutProps) {
   const [marketplaceData, setMarketplaceData] = useState<{
     blocket: { all: Publication[] };
     gumtree: { all: Publication[] };
@@ -77,16 +81,25 @@ export function MainLayout({ children, initialMarketplace = 'all', initialCatego
     fetchData();
   }, []);
 
-  const getCurrentMarketplaceData = (): { all: Publication[] } | undefined => {
+  const getCurrentMarketplaceData = () => {
     if (!marketplaceData) return undefined;
     
     if (selectedMarketplace === 'all') {
       const allItems = Object.values(marketplaceData)
         .flatMap(marketplace => marketplace.all || []);
-      return { all: allItems };
+      return { 
+        items: allItems,
+        total: allItems.length,
+        currentBuffer: allItems.length
+      };
     }
 
-    return marketplaceData[selectedMarketplace as keyof typeof marketplaceData];
+    const items = marketplaceData[selectedMarketplace as keyof typeof marketplaceData]?.all || [];
+    return {
+      items,
+      total: items.length,
+      currentBuffer: items.length
+    };
   };
 
   return (
@@ -110,6 +123,7 @@ export function MainLayout({ children, initialMarketplace = 'all', initialCatego
           selectedCategory={selectedCategory}
           selectedMarketplace={selectedMarketplace}
           onMarketplaceChange={setSelectedMarketplace}
+          onLoadMore={() => {}}
         />
       </Box>
     </Container>

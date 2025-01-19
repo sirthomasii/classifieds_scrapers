@@ -13,6 +13,7 @@ describe('Viewport', () => {
           selectedCategory={null}
           selectedMarketplace="all"
           onMarketplaceChange={() => {}}
+          onLoadMore={() => {}}
         />
       </MantineProvider>
     );

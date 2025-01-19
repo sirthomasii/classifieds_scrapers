@@ -8,26 +8,42 @@ import { GB, DK, FI, CH, DE, RO, SE } from 'country-flag-icons/react/3x2';
 import Head from 'next/head';
 
 interface ViewportProps {
-  marketplaceData: { all: Publication[] } | undefined;
+  marketplaceData: {
+    items: Publication[];
+    total: number;
+    currentBuffer: number;
+  } | undefined;
   selectedCategory: string | null;
   selectedMarketplace: string;
   onMarketplaceChange: (marketplace: string) => void;
+  onLoadMore: (buffer: number) => void;
 }
 
 export function Viewport({
   marketplaceData,
   selectedCategory,
   selectedMarketplace,
-  onMarketplaceChange
+  onMarketplaceChange,
+  onLoadMore
 }: ViewportProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchSuggestions, setSearchSuggestions] = useState<string[]>([]);
   const itemsPerPage = 15;
+  const bufferSize = 1000;
 
-  // console.log('Raw marketplaceData:', marketplaceData); // Debug log
+  const filteredData = marketplaceData?.items ?? [];
+  const totalItems = marketplaceData?.total ?? 0;
 
-  const filteredData = marketplaceData?.all ?? [];
+  // Load more data when approaching end of current buffer
+  useEffect(() => {
+    const currentPosition = (currentPage - 1) * itemsPerPage;
+    const bufferThreshold = marketplaceData?.currentBuffer ?? 0 - 100; // Load more when 100 items from end
+    
+    if (currentPosition > bufferThreshold) {
+      onLoadMore(marketplaceData?.currentBuffer ?? 0 + bufferSize);
+    }
+  }, [currentPage, marketplaceData?.currentBuffer]);
 
   // Sort data by timestamp (newest first)
   const sortedData = [...filteredData].sort((a, b) => {
@@ -69,7 +85,7 @@ export function Viewport({
   // Generate search suggestions from titles
   useEffect(() => {
     if (searchQuery.length > 2) {
-      const allTitles = (marketplaceData?.all || []).map(item => 
+      const allTitles = (marketplaceData?.items || []).map(item => 
         item.title?.english || item.title?.original || ''
       );
       // Create a Set to ensure unique values
@@ -157,7 +173,7 @@ export function Viewport({
               value={searchQuery}
               onChange={setSearchQuery}
               data={searchSuggestions}
-              placeholder={`Search ${filteredData.length.toLocaleString()} listings...`}
+              placeholder={`Search ${totalItems.toLocaleString()} listings...`}
               leftSection={<IconSearch size={16} />}
               styles={{
                 input: {
