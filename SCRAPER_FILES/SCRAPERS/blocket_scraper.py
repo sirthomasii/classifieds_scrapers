@@ -14,7 +14,7 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 # Configure Selenium WebDriver (make sure you have ChromeDriver installed)
 options = webdriver.ChromeOptions()
-options.add_argument('--headless')  # Enable headless mode
+# options.add_argument('--headless')  # Enable headless mode
 options.add_argument('--no-sandbox')
 options.add_argument('--disable-dev-shm-usage')
 options.add_argument('--silent')  # Add this line to suppress DevTools messages
@@ -41,7 +41,7 @@ driver = webdriver.Chrome(options=options)
 
 # URLs to scrape
 urls = [
-    ("https://www.blocket.se/annonser/hela_sverige/datorer_tv-spel/datorer_tillbehor", "computers"),
+    ("https://www.blocket.se/annonser/hela_sverige/elektronik?cg=5000", "eletronics"),
     ("https://www.blocket.se/annonser/hela_sverige/fritid_hobby/musikutrustning?cg=6160", "music")
 ]
 

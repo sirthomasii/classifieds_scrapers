@@ -9,6 +9,7 @@ import styles from './viewport.module.css';
 import Image from 'next/image';
 import { IconSearch } from '@tabler/icons-react';
 import { GB, DK, FI, CH, DE, RO, SE } from 'country-flag-icons/react/3x2';
+import Head from 'next/head';
 
 interface ViewportProps {
   marketplaceData: { all: Publication[] } | undefined;
@@ -116,200 +117,212 @@ export function Viewport({
   };
 
   return (
-    <Box p="md" style={{ maxHeight: '100vh', overflowY: 'auto' }}>
-      <div style={{ 
-        padding: '16px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '16px',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
-      }} className={styles.headerContainer}>
-        <div className={styles.logoText}>Fleatronics</div>
-        <div className={styles.controlsWrapper}>
-          <Select
-            className={styles.marketplaceSelect}
-            value={selectedMarketplace}
-            onChange={(value) => onMarketplaceChange(value || 'all')}
-            data={[
-              { value: 'all', label: 'All Marketplaces' },
-              { value: 'blocket', label: 'Blocket' },
-              { value: 'gumtree', label: 'Gumtree' },
-              { value: 'kleinanzeigen', label: 'Kleinanzeigen' },
-              { value: 'olx', label: 'OLX' },
-              { value: 'dba', label: 'DBA' },
-              { value: 'tori', label: 'Tori' },
-              { value: 'ricardo', label: 'Ricardo' },
-            ]}
-            style={{ width: '200px' }}
-            styles={{
-              input: {
-                backgroundColor: '#2C2E33',
-                color: 'white',
-              },
-              dropdown: {
-                backgroundColor: '#2C2E33',
-                color: 'white',
-              },
-              option: {
-                backgroundColor: '#2C2E33',
-                color: 'white',
-                '&:hover': {
-                  backgroundColor: '#1C1E23'
-                }
-              },
-            }}
-          />
-          <Autocomplete
-            className={styles.searchBar}
-            style={{ flex: 1 }}
-            value={searchQuery}
-            onChange={setSearchQuery}
-            data={searchSuggestions}
-            placeholder={`Search ${filteredData.length.toLocaleString()} listings...`}
-            leftSection={<IconSearch size={16} />}
-            styles={{
-              input: {
-                backgroundColor: '#2C2E33',
-                color: 'white',
-                borderRadius: '20px',
-                '&::placeholder': {
-                  color: 'rgba(255, 255, 255, 0.5)',
+    <>
+      <Head>
+        <title>Fleatronics - Find Used Electronics & Music Equipment Across Europe</title>
+        <meta name="description" content="Search for used electronics, music instruments, and audio equipment across multiple European marketplaces. Find the best deals on second-hand gear." />
+        <meta name="keywords" content="used electronics, second hand, music equipment, audio gear, musical instruments, European marketplaces, used synthesizers, audio equipment, music gear" />
+        <meta property="og:title" content="Fleatronics - Used Electronics & Music Equipment Finder" />
+        <meta property="og:description" content="Search across European marketplaces for used electronics and music equipment. Compare prices and find the best deals." />
+        <meta property="og:type" content="website" />
+        <meta name="robots" content="index, follow" />
+        <link rel="canonical" href="https://fleatronics.com" />
+      </Head>
+      <Box p="md" style={{ maxHeight: '100vh', overflowY: 'auto' }}>
+        <div style={{ 
+          padding: '16px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '16px',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
+        }} className={styles.headerContainer}>
+          <div className={styles.logoText}>Fleatronics</div>
+          <div className={styles.controlsWrapper}>
+            <Select
+              className={styles.marketplaceSelect}
+              value={selectedMarketplace}
+              onChange={(value) => onMarketplaceChange(value || 'all')}
+              data={[
+                { value: 'all', label: 'All Marketplaces' },
+                { value: 'blocket', label: 'Blocket' },
+                { value: 'gumtree', label: 'Gumtree' },
+                { value: 'kleinanzeigen', label: 'Kleinanzeigen' },
+                { value: 'olx', label: 'OLX' },
+                { value: 'dba', label: 'DBA' },
+                { value: 'tori', label: 'Tori' },
+                { value: 'ricardo', label: 'Ricardo' },
+              ]}
+              style={{ width: '200px' }}
+              styles={{
+                input: {
+                  backgroundColor: '#2C2E33',
+                  color: 'white',
                 },
-              },
-              dropdown: {
-                backgroundColor: '#2C2E33',
-                color: 'white',
-                borderRadius: '12px',
-                marginTop: '8px'
-              },
-            }}
-          />
-        </div>
-      </div>
-
-      <div className={styles.gridContainer}>
-        {isLoading ? (
-          // Show 15 skeleton cards while loading
-          Array(15).fill(0).map((_, index) => (
-            <div key={index} className={styles.itemCard}>
-              <div className={`${styles.imageContainer} ${styles.shimmerLoading}`}>
-                <Skeleton height="100%" radius="sm" className={styles.skeleton} />
-              </div>
-              <div className={styles.itemContent}>
-                <Skeleton height={20} width="80%" mb={8} className={styles.skeleton} />
-                <Skeleton height={16} width="40%" mb={8} className={styles.skeleton} />
-                <Skeleton height={14} width="60%" mb={4} className={styles.skeleton} />
-                <Skeleton height={12} width="30%" className={styles.skeleton} />
-              </div>
-            </div>
-          ))
-        ) : (
-          displayedItems.map((item, index) => (
-            <div 
-              key={`${item.link}-${index}`}
-              className={styles.itemCard}
-              onClick={() => item.link && window.open(item.link, '_blank')}
-            >
-              <div className={styles.imageContainer}>
-                {item.main_image && (
-                  <Image
-                    src={item.main_image || ''}
-                    alt={item.title?.english || item.title?.original || 'Product image'}
-                    width={250}
-                    height={180}
-                    className={styles.imageLoading}
-                    onLoadingComplete={() => {
-                      const img = document.querySelector(`[src="${item.main_image}"]`);
-                      img?.classList.remove(styles.imageLoading);
-                    }}
-                    style={{ 
-                      objectFit: 'cover',
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      width: '100%',
-                      height: '100%'
-                    }}
-                  />
-                )}
-              </div>
-              <div className={styles.itemContent}>
-                <div style={{ 
-                  fontSize: '16px', 
-                  fontWeight: 'bold',
-                  marginBottom: '8px',
-                  color: 'white'
-                }}>
-                  {item.title?.english || item.title?.original || 'No title'}
-                </div>
-                <div style={{ 
-                  fontSize: '14px',
-                  color: '#4CAF50',
-                  marginBottom: '8px'
-                }}>
-                  {typeof item.price?.eur === 'number' ? `${item.price.eur} €` : 'Negotiable'}
-                </div>
-                <div style={{ 
-                  fontSize: '12px',
-                  color: '#aaa',
-                  marginBottom: '4px'
-                }}>
-                  <span style={{ 
-                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                    padding: '2px 6px',
-                    borderRadius: '4px',
-                    marginRight: '8px',
-                    textTransform: 'capitalize',
-                    display: 'inline-flex',
-                    alignItems: 'center'
-                  }}>
-                    {item.source}&nbsp;
-                    {getFlagComponent(item.source)}
-                  </span>
-                  {item.timestamp ? new Date(item.timestamp).toLocaleString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    hour12: false
-                  }) : 'No date'}
-                </div>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-
-      {totalPages > 1 && (
-        <div className={styles.paginationContainer}>
-          <div className={styles.paginationWrapper}>
-            {[...Array(totalPages)].map((_, i) => {
-              // Show current page, 2 before and 2 after
-              const shouldShow = 
-                i === 0 || // First page
-                i === totalPages - 1 || // Last page
-                (i >= currentPage - 2 && i <= currentPage + 2); // Current range
-              
-              if (!shouldShow) {
-                if (i === currentPage - 3 || i === currentPage + 3) {
-                  return <span key={i} style={{ color: 'white' }}>...</span>;
-                }
-                return null;
-              }
-              
-              return (
-                <button
-                  key={i}
-                  onClick={() => setCurrentPage(i + 1)}
-                  className={currentPage === i + 1 ? styles.paginationButtonActive : styles.paginationButton}
-                >
-                  {i + 1}
-                </button>
-              );
-            })}
+                dropdown: {
+                  backgroundColor: '#2C2E33',
+                  color: 'white',
+                },
+                option: {
+                  backgroundColor: '#2C2E33',
+                  color: 'white',
+                  '&:hover': {
+                    backgroundColor: '#1C1E23'
+                  }
+                },
+              }}
+            />
+            <Autocomplete
+              className={styles.searchBar}
+              style={{ flex: 1 }}
+              value={searchQuery}
+              onChange={setSearchQuery}
+              data={searchSuggestions}
+              placeholder={`Search ${filteredData.length.toLocaleString()} listings...`}
+              leftSection={<IconSearch size={16} />}
+              styles={{
+                input: {
+                  backgroundColor: '#2C2E33',
+                  color: 'white',
+                  borderRadius: '20px',
+                  '&::placeholder': {
+                    color: 'rgba(255, 255, 255, 0.5)',
+                  },
+                },
+                dropdown: {
+                  backgroundColor: '#2C2E33',
+                  color: 'white',
+                  borderRadius: '12px',
+                  marginTop: '8px'
+                },
+              }}
+            />
           </div>
         </div>
-      )}
-    </Box>
+
+        <div className={styles.gridContainer}>
+          {isLoading ? (
+            // Show 15 skeleton cards while loading
+            Array(15).fill(0).map((_, index) => (
+              <div key={index} className={styles.itemCard}>
+                <div className={`${styles.imageContainer} ${styles.shimmerLoading}`}>
+                  <Skeleton height="100%" radius="sm" className={styles.skeleton} />
+                </div>
+                <div className={styles.itemContent}>
+                  <Skeleton height={20} width="80%" mb={8} className={styles.skeleton} />
+                  <Skeleton height={16} width="40%" mb={8} className={styles.skeleton} />
+                  <Skeleton height={14} width="60%" mb={4} className={styles.skeleton} />
+                  <Skeleton height={12} width="30%" className={styles.skeleton} />
+                </div>
+              </div>
+            ))
+          ) : (
+            displayedItems.map((item, index) => (
+              <div 
+                key={`${item.link}-${index}`}
+                className={styles.itemCard}
+                onClick={() => item.link && window.open(item.link, '_blank')}
+              >
+                <div className={styles.imageContainer}>
+                  {item.main_image && (
+                    <Image
+                      src={item.main_image || ''}
+                      alt={item.title?.english || item.title?.original || 'Product image'}
+                      width={250}
+                      height={180}
+                      className={styles.imageLoading}
+                      onLoadingComplete={() => {
+                        const img = document.querySelector(`[src="${item.main_image}"]`);
+                        img?.classList.remove(styles.imageLoading);
+                      }}
+                      style={{ 
+                        objectFit: 'cover',
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%'
+                      }}
+                    />
+                  )}
+                </div>
+                <div className={styles.itemContent}>
+                  <div style={{ 
+                    fontSize: '16px', 
+                    fontWeight: 'bold',
+                    marginBottom: '8px',
+                    color: 'white'
+                  }}>
+                    {item.title?.english || item.title?.original || 'No title'}
+                  </div>
+                  <div style={{ 
+                    fontSize: '14px',
+                    color: '#4CAF50',
+                    marginBottom: '8px'
+                  }}>
+                    {typeof item.price?.eur === 'number' ? `${item.price.eur} €` : 'Negotiable'}
+                  </div>
+                  <div style={{ 
+                    fontSize: '12px',
+                    color: '#aaa',
+                    marginBottom: '4px'
+                  }}>
+                    <span style={{ 
+                      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                      padding: '2px 6px',
+                      borderRadius: '4px',
+                      marginRight: '8px',
+                      textTransform: 'capitalize',
+                      display: 'inline-flex',
+                      alignItems: 'center'
+                    }}>
+                      {item.source}&nbsp;
+                      {getFlagComponent(item.source)}
+                    </span>
+                    {item.timestamp ? new Date(item.timestamp).toLocaleString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      hour12: false
+                    }) : 'No date'}
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {totalPages > 1 && (
+          <div className={styles.paginationContainer}>
+            <div className={styles.paginationWrapper}>
+              {[...Array(totalPages)].map((_, i) => {
+                // Show current page, 2 before and 2 after
+                const shouldShow = 
+                  i === 0 || // First page
+                  i === totalPages - 1 || // Last page
+                  (i >= currentPage - 2 && i <= currentPage + 2); // Current range
+                
+                if (!shouldShow) {
+                  if (i === currentPage - 3 || i === currentPage + 3) {
+                    return <span key={i} style={{ color: 'white' }}>...</span>;
+                  }
+                  return null;
+                }
+                
+                return (
+                  <button
+                    key={i}
+                    onClick={() => setCurrentPage(i + 1)}
+                    className={currentPage === i + 1 ? styles.paginationButtonActive : styles.paginationButton}
+                  >
+                    {i + 1}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </Box>
+    </>
   );
 }

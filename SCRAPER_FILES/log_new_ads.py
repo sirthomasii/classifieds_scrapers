@@ -117,7 +117,7 @@ def main():
             print("Waiting 2 minutes until next run...")
             
             # Wait 30 minutes
-            time.sleep(120)
+            time.sleep(1200)
             
         except Exception as e:
             print(f"Error in scraper run: {e}")
