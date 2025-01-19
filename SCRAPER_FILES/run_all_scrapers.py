@@ -9,11 +9,11 @@ from datetime import datetime
 
 # Define num pages per batch
 SCRAPER_CONFIG = {
-    'kleinanzeigen': 2,
-    'blocket': 1,
+    'kleinanzeigen': 3,
+    'blocket': 2,
     'gumtree': 2,
-    'tori': 1,
-    'olx': 1,
+    'tori': 2,
+    'olx': 2,
     'ricardo': 1,
     'dba': 1
 }
