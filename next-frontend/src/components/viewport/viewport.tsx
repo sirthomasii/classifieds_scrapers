@@ -1,10 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { TextInput, Card, Text, Group, Pagination, Box, Skeleton, Select, Autocomplete } from '@mantine/core';
-import axios from 'axios';
-import qs from 'qs';
+import { Box, Skeleton, Select, Autocomplete } from '@mantine/core';
 import { Publication } from '@/types/publication';
-import { motion, AnimatePresence } from 'framer-motion';
-import { MarketplaceData } from '@/types/marketplace';
 import styles from './viewport.module.css';
 import Image from 'next/image';
 import { IconSearch } from '@tabler/icons-react';
@@ -127,6 +123,11 @@ export function Viewport({
         <meta property="og:type" content="website" />
         <meta name="robots" content="index, follow" />
         <link rel="canonical" href="https://fleatronics.com" />
+        <script 
+          async 
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4841275450464973"
+          crossOrigin="anonymous"
+        />
       </Head>
       <Box p="md" style={{ maxHeight: '100vh', overflowY: 'auto' }}>
         <div style={{ 
