@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Container, Box } from '@mantine/core';
 import classes from './MainLayout.module.css';
 import { Viewport } from './viewport/viewport';
@@ -32,6 +32,7 @@ export function MainLayout({
   initialMarketplace = 'all',
   initialCategory = null,
 }: MainLayoutProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
   const [marketplaceData, setMarketplaceData] = useState<{
     blocket: { all: Publication[] };
     gumtree: { all: Publication[] };
@@ -41,6 +42,26 @@ export function MainLayout({
   } | null>(null);
   const [selectedMarketplace, setSelectedMarketplace] = useState(initialMarketplace);
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
+
+  // Cleanup function for ResizeObserver
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    // Disconnect any existing ResizeObserver when component unmounts
+    return () => {
+      const observers = (window as any).__resizeObservers__;
+      if (observers) {
+        observers.forEach((observer: any) => {
+          if (observer.activeTargets.includes(container) || 
+              observer.activeTargets.includes(container.parentElement)) {
+            observer.unobserve(container);
+            observer.unobserve(container.parentElement);
+          }
+        });
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -104,12 +125,14 @@ export function MainLayout({
 
   return (
     <Container 
+      ref={containerRef}
       size="xl" 
       style={{ 
         minHeight: '100vh',
         padding: 0,
         boxShadow: '0 4px 15px 0 rgba(0, 0, 0, 0.8), 0 6px 20px 0 rgba(0, 0, 0, 0.8)',
         backgroundColor: '#2424248c',
+        contain: 'paint layout',  // Add containment for better performance
       }}
     >
       {children}
@@ -117,6 +140,7 @@ export function MainLayout({
         minHeight: '100vh',
         backgroundColor: 'rgba(0, 0, 0, 0.75)', 
         width: '100%',
+        contain: 'paint layout',  // Add containment for better performance
       }}>
         <Viewport 
           marketplaceData={getCurrentMarketplaceData()}

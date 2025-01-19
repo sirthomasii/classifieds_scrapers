@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Box, Skeleton, Select, Autocomplete } from '@mantine/core';
 import { Publication } from '@/types/publication';
 import styles from './viewport.module.css';
@@ -28,12 +28,89 @@ export function Viewport({
 }: ViewportProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeSearch, setActiveSearch] = useState('');
   const [searchSuggestions, setSearchSuggestions] = useState<string[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const gridRef = useRef<HTMLDivElement>(null);
+  const resizeTimeoutRef = useRef<NodeJS.Timeout>();
+  const searchTimeoutRef = useRef<NodeJS.Timeout>();
   const itemsPerPage = 15;
   const bufferSize = 1000;
 
   const filteredData = marketplaceData?.items ?? [];
   const totalItems = marketplaceData?.total ?? 0;
+
+  // Memoize sorted data to prevent unnecessary re-sorting
+  const sortedData = useMemo(() => 
+    [...filteredData].sort((a, b) => {
+      const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+      const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+      return timeB - timeA;
+    }), [filteredData]);
+
+  // Memoize searched data to prevent unnecessary filtering
+  const searchedData = useMemo(() => 
+    activeSearch 
+      ? sortedData.filter(item => {
+          const englishTitle = item.title?.english?.toLowerCase() || '';
+          const originalTitle = item.title?.original?.toLowerCase() || '';
+          const searchTerm = activeSearch.toLowerCase();
+          return englishTitle.includes(searchTerm) || originalTitle.includes(searchTerm);
+        })
+      : sortedData,
+    [sortedData, activeSearch]
+  );
+
+  // Debounced search handler
+  const handleSearch = useCallback((value: string) => {
+    setIsSearching(true);
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    searchTimeoutRef.current = setTimeout(() => {
+      setActiveSearch(value);
+      setIsSearching(false);
+    }, 300);
+  }, []);
+
+  // Cleanup timeouts
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Modified resize handler with search state check
+  const handleResize = useCallback(() => {
+    if (resizeTimeoutRef.current) {
+      clearTimeout(resizeTimeoutRef.current);
+    }
+    if (!isSearching && gridRef.current) {
+      resizeTimeoutRef.current = setTimeout(() => {
+        if (gridRef.current) {
+          requestAnimationFrame(() => {
+            gridRef.current!.style.display = 'none';
+            // Force reflow
+            // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+            gridRef.current!.offsetHeight;
+            gridRef.current!.style.display = 'grid';
+          });
+        }
+      }, 100);
+    }
+  }, [isSearching]);
+
+  useEffect(() => {
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      if (resizeTimeoutRef.current) {
+        clearTimeout(resizeTimeoutRef.current);
+      }
+    };
+  }, [handleResize]);
 
   // Load more data when approaching end of current buffer
   useEffect(() => {
@@ -45,26 +122,10 @@ export function Viewport({
     }
   }, [currentPage, marketplaceData?.currentBuffer]);
 
-  // Sort data by timestamp (newest first)
-  const sortedData = [...filteredData].sort((a, b) => {
-    const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
-    const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
-    return timeB - timeA;
-  });
-
-  const searchedData = searchQuery 
-    ? sortedData.filter(item => {
-        const englishTitle = item.title?.english?.toLowerCase() || '';
-        const originalTitle = item.title?.original?.toLowerCase() || '';
-        const searchTerm = searchQuery.toLowerCase();
-        return englishTitle.includes(searchTerm) || originalTitle.includes(searchTerm);
-      })
-    : sortedData;
-
-  // Reset to page 1 when search query, category, or marketplace changes
+  // Reset to page 1 when search changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, selectedCategory, selectedMarketplace]);
+  }, [activeSearch, selectedCategory, selectedMarketplace]);
 
   const totalPages = Math.ceil(searchedData.length / itemsPerPage);
   
@@ -171,10 +232,28 @@ export function Viewport({
               className={styles.searchBar}
               style={{ flex: 1 }}
               value={searchQuery}
-              onChange={setSearchQuery}
+              onChange={(value) => {
+                setSearchQuery(value);
+                handleSearch(value);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleSearch(searchQuery);
+                }
+              }}
+              onOptionSubmit={(value) => {
+                setSearchQuery(value);
+                handleSearch(value);
+              }}
               data={searchSuggestions}
               placeholder={`Search ${totalItems.toLocaleString()} listings...`}
-              leftSection={<IconSearch size={16} />}
+              leftSection={
+                <IconSearch 
+                  size={16} 
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => handleSearch(searchQuery)}
+                />
+              }
               styles={{
                 input: {
                   backgroundColor: '#2C2E33',
@@ -195,7 +274,14 @@ export function Viewport({
           </div>
         </div>
 
-        <div className={styles.gridContainer}>
+        <div 
+          ref={gridRef} 
+          className={styles.gridContainer}
+          style={{
+            opacity: isSearching ? 0.7 : 1,
+            transition: 'opacity 0.2s ease-in-out'
+          }}
+        >
           {isLoading ? (
             // Show 15 skeleton cards while loading
             Array(15).fill(0).map((_, index) => (
