@@ -16,7 +16,8 @@ body {
   font-family: Arial, Helvetica, sans-serif;
   position: relative;
   z-index: 1;
-  overflow: hidden; /* Prevent scrollbars from appearing */
+  overflow-y: auto; /* Changed from hidden to auto */
+  overflow-x: hidden;
 }
 
 /* Animated metallic background */
@@ -72,3 +73,35 @@ h1, h2, h3, h4, h5, h6 {
     text-wrap: balance;
   }
 } */
+
+/* Custom Scrollbar Styling */
+* {
+  /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+}
+
+/* Chrome, Edge, Safari */
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  border: none;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Hide scrollbar in IE */
+* {
+  -ms-overflow-style: none;
+}
