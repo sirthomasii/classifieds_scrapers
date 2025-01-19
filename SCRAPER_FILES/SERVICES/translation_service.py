@@ -71,50 +71,48 @@ class TranslationService:
         """Worker that handles translations from the queue"""
         while True:
             try:
-                # Get item from queue
                 item = self.translation_queue.get()
-                if item is None:  # Poison pill to stop the worker
+                if item is None:  # Poison pill
                     break
 
                 site_name, data = item
-                # print(f"Translating titles for {site_name}...")
-
+                
+                # Use a very unique separator that won't appear in titles
+                SEPARATOR = "§‡†★"  # Combination of rare Unicode characters
+                
                 # Collect all titles with their references
                 translations_needed = []
-                title_refs = []  # Store direct references to title objects
+                title_refs = []
 
                 # Iterate through all pages and ads
                 for page_data in data.values():
                     for ad in page_data:
                         if ad['title']['original']:
-                            translations_needed.append(ad['title']['original'])
-                            title_refs.append(ad['title'])  # Store reference to the title dict
+                            translations_needed.append(ad['title']['original'].strip())
+                            title_refs.append(ad['title'])
 
                 if translations_needed:
-                    # Split titles into chunks and translate
                     chunks = self._split_into_chunks(translations_needed)
                     translated_titles = []
 
                     for chunk in chunks:
                         try:
-                            # Use a unique separator that won't appear in titles
-                            separator = " @# "
-                            chunk_text = separator.join(chunk)
+                            chunk_text = SEPARATOR.join(chunk)
                             translated_chunk = self.translator.translate(chunk_text)
-                            
-                            # Split back using the unique separator
-                            translated_titles.extend(translated_chunk.split(separator))
+                            translated_titles.extend(translated_chunk.split(SEPARATOR))
+                            time.sleep(1)  # Rate limiting
                         except Exception as e:
                             print(f"Translation error for chunk: {e}")
-                            translated_titles.extend(chunk)
+                            translated_titles.extend(chunk)  # Use original on error
 
-                    # Update original data structure using direct references
+                    # Update original data structure
                     for title_obj, translation in zip(title_refs, translated_titles):
-                        title_obj['english'] = translation
+                        title_obj['english'] = translation.strip()
 
                     # Handle the translated data
                     _, new_ads, _, category_stats = upload_data_to_mongo(site_name, data)
-                    # Update category stats with new ads count
+                    
+                    # Update category stats
                     for category, stats in category_stats.items():
                         self.results[site_name][category] = stats
 
