@@ -14,8 +14,8 @@ export const metadata: Metadata = {
   alternates: {
     canonical: 'https://fleatronics.com'
   },
-  verification: {
-    google: 'ca-pub-4841275450464973'
+  other: {
+    'google-adsense-account': 'ca-pub-4841275450464973'
   }
 }
 
