@@ -591,5 +591,64 @@
       "tori - computers": "100.0% new ads (54/54)",
       "tori - instruments": "42.6% new ads (23/54)"
     }
+  },
+  {
+    "timestamp": "2025-01-19T14:32:59.300190",
+    "completeness": {},
+    "new_ads": {}
+  },
+  {
+    "timestamp": "2025-01-19T14:37:43.885274",
+    "completeness": {
+      "kleinanzeigen": "97.9% complete ads (139/142)",
+      "blocket": "99.2% complete ads (238/240)",
+      "gumtree": "94.0% complete ads (47/50)",
+      "tori": "96.3% complete ads (208/216)"
+    },
+    "new_ads": {
+      "kleinanzeigen - computers": "78.3% new ads (54/69)",
+      "kleinanzeigen - music": "86.3% new ads (63/73)",
+      "blocket - eletronics": "100.0% new ads (120/120)",
+      "blocket - music": "57.5% new ads (69/120)",
+      "gumtree - uncategorized": "100.0% new ads (50/50)",
+      "tori - computers": "98.1% new ads (106/108)",
+      "tori - instruments": "84.3% new ads (91/108)"
+    }
+  },
+  {
+    "timestamp": "2025-01-19T15:00:04.816796",
+    "completeness": {
+      "kleinanzeigen": "96.5% complete ads (138/143)",
+      "blocket": "99.6% complete ads (239/240)",
+      "gumtree": "90.0% complete ads (45/50)",
+      "tori": "96.3% complete ads (208/216)"
+    },
+    "new_ads": {
+      "kleinanzeigen - computers": "85.1% new ads (57/67)",
+      "kleinanzeigen - music": "64.5% new ads (49/76)",
+      "blocket - eletronics": "78.3% new ads (94/120)",
+      "blocket - music": "11.7% new ads (14/120)",
+      "gumtree - uncategorized": "36.0% new ads (18/50)",
+      "tori - computers": "99.1% new ads (107/108)",
+      "tori - instruments": "15.7% new ads (17/108)"
+    }
+  },
+  {
+    "timestamp": "2025-01-19T15:48:59.340050",
+    "completeness": {
+      "kleinanzeigen": "98.1% complete ads (1450/1478)",
+      "gumtree": "98.0% complete ads (49/50)",
+      "blocket": "99.3% complete ads (2384/2400)",
+      "tori": "94.4% complete ads (204/216)"
+    },
+    "new_ads": {
+      "kleinanzeigen - computers": "46.0% new ads (334/726)",
+      "kleinanzeigen - music": "85.8% new ads (645/752)",
+      "gumtree - uncategorized": "100.0% new ads (50/50)",
+      "blocket - eletronics": "98.5% new ads (1182/1200)",
+      "blocket - music": "99.7% new ads (1196/1200)",
+      "tori - computers": "86.1% new ads (93/108)",
+      "tori - instruments": "99.1% new ads (107/108)"
+    }
   }
 ]
