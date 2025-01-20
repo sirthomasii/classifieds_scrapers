@@ -8,6 +8,8 @@ from datetime import datetime
 from pymongo.errors import BulkWriteError
 from pymongo import UpdateOne
 from .upload_service import upload_data_to_mongo
+import re
+import traceback
 
 class TranslationService:
     def __init__(self):
@@ -40,12 +42,12 @@ class TranslationService:
                     self.results[site_name][category] = {'total': 0, 'new': 0, 'complete': 0}
         self.translation_queue.put((site_name, data))
 
-    def _split_into_chunks(self, titles, max_length=4500):
+    def _split_into_chunks(self, titles, max_length=3500):
         """Split titles into chunks for translation"""
         chunks = []
         current_chunk = []
         current_length = 0
-        separator_length = 5  # Length of " ||| "
+        separator_length = len("§§INDEX==0000 ")  # Length of our separator
 
         for title in titles:
             # Account for title length plus separator
@@ -77,12 +79,16 @@ class TranslationService:
 
                 site_name, data = item
                 
-                # Use a very unique separator that won't appear in titles
-                SEPARATOR = "§‡†★"  # Combination of rare Unicode characters
+                # Use a more unique separator that won't appear in translations
+                SEPARATOR_BASE = "§§INDEX=="  # More distinct separator
                 
                 # Collect all titles with their references
                 translations_needed = []
                 title_refs = []
+                # debug_data = {
+                #     'site_name': site_name,
+                #     'chunks': []
+                # }
 
                 # Iterate through all pages and ads
                 for page_data in data.values():
@@ -93,21 +99,67 @@ class TranslationService:
 
                 if translations_needed:
                     chunks = self._split_into_chunks(translations_needed)
-                    translated_titles = []
+                    translated_titles = [None] * len(translations_needed)  # Pre-initialize with None
 
-                    for chunk in chunks:
+                    for chunk_index, chunk in enumerate(chunks):
+                        chunk_debug = {
+                            'chunk_index': chunk_index,
+                            'original_titles': chunk,
+                            'indexed_chunk_text': '',
+                            'translated_chunk': '',
+                            'split_translations': []
+                        }
+                        
                         try:
-                            chunk_text = SEPARATOR.join(chunk)
+                            # Add index to each title's separator with padding
+                            indexed_titles = [f"{title}{SEPARATOR_BASE}{str(i).zfill(4)}" for i, title in enumerate(chunk)]
+                            chunk_text = " ".join(indexed_titles)
+                            chunk_debug['indexed_chunk_text'] = chunk_text
+                            
                             translated_chunk = self.translator.translate(chunk_text)
-                            translated_titles.extend(translated_chunk.split(SEPARATOR))
+                            chunk_debug['translated_chunk'] = translated_chunk
+                            
+                            # Split translations by separator
+                            translations = translated_chunk.split(SEPARATOR_BASE)
+                            
+                            # Process each translation except the last empty one
+                            for i, trans in enumerate(translations[:-1]):
+                                if trans.strip():
+                                    # Get the index from the next separator position
+                                    index_str = translations[i+1][:4]  # Get first 4 chars of next segment
+                                    if index_str.isdigit():
+                                        index = int(index_str)
+                                        # Remove any leading index numbers (e.g., "0000 ", "0001 ")
+                                        translation = re.sub(r'^\d{4}\s*', '', trans.strip())
+                                        if 0 <= index < len(translated_titles):
+                                            translated_titles[index] = translation
+                                            chunk_debug['split_translations'].append({
+                                                'index': index,
+                                                'translation': translation
+                                            })
+                            
                             time.sleep(1)  # Rate limiting
                         except Exception as e:
-                            print(f"Translation error for chunk: {e}")
-                            translated_titles.extend(chunk)  # Use original on error
+                            error_msg = f"Translation error for chunk {chunk_index}: {str(e)}"
+                            print(error_msg)
+                            chunk_debug['error'] = error_msg
+                            # Use original titles for this chunk on error
+                            for i, title in enumerate(chunk):
+                                if i < len(translated_titles):
+                                    translated_titles[i] = title
 
-                    # Update original data structure
-                    for title_obj, translation in zip(title_refs, translated_titles):
-                        title_obj['english'] = translation.strip()
+                        # finally:
+                        #     debug_data['chunks'].append(chunk_debug)
+
+                    # # Save debug data to JSON file
+                    # timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                    # debug_filename = f'translation_debug_{site_name}_{timestamp}.json'
+                    # with open(debug_filename, 'w', encoding='utf-8') as f:
+                    # json.dump(debug_data, f, ensure_ascii=False, indent=2)
+
+                    # Update original data structure with position-verified translations
+                    for i, (title_obj, translation) in enumerate(zip(title_refs, translated_titles)):
+                        title_obj['english'] = translation.strip() if translation else title_obj['original']
 
                     # Handle the translated data
                     _, new_ads, _, category_stats = upload_data_to_mongo(site_name, data)
@@ -120,7 +172,7 @@ class TranslationService:
                 print(f"Error in translation worker: {e}")
             finally:
                 self.translation_queue.task_done()
-
+                                
     def _handle_translated_data(self, site_name, data):
         """Handle the translated data - either save to file or upload to MongoDB"""
         upload_data_to_mongo(site_name, data)

@@ -12,10 +12,10 @@ from dotenv import load_dotenv
 
 # Define num pages per batch
 SCRAPER_CONFIG = {
-    'kleinanzeigen': 3,
+    'kleinanzeigen': 1,
     'blocket': 2,
     'gumtree': 2,
-    'tori': 2,
+    'tori': 3,
     'olx': 2,
     'ricardo': 1,
     'dba': 1
@@ -50,7 +50,7 @@ class ScraperService:
         
         if is_first_run:
             print("\nFirst run detected - increasing batch sizes for initial data collection")
-            return {site: pages * 10 for site, pages in SCRAPER_CONFIG.items()}
+            return {site: pages * 20 for site, pages in SCRAPER_CONFIG.items()}
         
         return SCRAPER_CONFIG
 

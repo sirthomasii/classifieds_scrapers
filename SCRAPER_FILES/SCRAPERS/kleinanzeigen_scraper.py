@@ -227,7 +227,7 @@ def scrape(max_pages=2):
                     page += 1
                     
                     if page > max_pages:
-                        print(f"Reached maximum page limit ({max_pages}), stopping...")
+                        # print(f"Reached maximum page limit ({max_pages}), stopping...")
                         break
 
                 except Exception as e:
