@@ -6,6 +6,7 @@ import { Header } from '../partials/Header';
 import { ListingCard } from './fragments/ListingCard';
 import { AdCard } from './fragments/AdCard';
 import { Pagination } from './fragments/Pagination';
+import { GDPRBanner } from './fragments/GDPRBanner';
 
 interface ViewportProps {
   marketplaceData: {
@@ -36,6 +37,10 @@ export function Viewport({
   const searchTimeoutRef = useRef<NodeJS.Timeout>();
   const [itemsPerPage, setItemsPerPage] = useState(15);
   const bufferSize = 1000;
+  const [showGDPR, setShowGDPR] = useState(() => {
+    return !localStorage.getItem('gdprAccepted');
+  });
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const filteredData = marketplaceData?.items ?? [];
   const totalItems = marketplaceData?.total ?? 0;
@@ -207,6 +212,15 @@ export function Viewport({
     return () => window.removeEventListener('resize', handleItemsPerPage);
   }, []);
 
+  const handleGDPRAccept = () => {
+    localStorage.setItem('gdprAccepted', 'true');
+    setShowGDPR(false);
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+    scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   return (
     <Box style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -222,7 +236,10 @@ export function Viewport({
         onMarketplaceChange={onMarketplaceChange}
       />
 
-      <div style={{ flex: 1, overflowY: 'auto', position: 'relative' }}>
+      <div 
+        ref={scrollContainerRef}
+        style={{ flex: 1, overflowY: 'auto', position: 'relative' }}
+      >
         <div ref={gridRef} className={styles.gridContainer}>
           {isLoading ? (
             // Show 15 skeleton cards while loading
@@ -258,9 +275,11 @@ export function Viewport({
         <Pagination 
           currentPage={currentPage}
           totalPages={totalPages}
-          onPageChange={setCurrentPage}
+          onPageChange={handlePageChange}
         />
       </div>
+
+      {showGDPR && <GDPRBanner onAccept={handleGDPRAccept} />}
     </Box>
   );
 }
