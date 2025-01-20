@@ -25,12 +25,14 @@ def init_driver():
     # chrome_options.add_argument('--window-position=-32000,-32000')
     chrome_options.add_argument('--headless')  # Enable headless mode
     chrome_options.add_argument('--silent')  # Add this line to suppress DevTools messages
-    # Create the driver with a timeout
+    
+    # Create the driver with version_main parameter matching your Chrome version
     driver = uc.Chrome(
         options=chrome_options,
-        driver_executable_path=None,  # Let it find the driver automatically
-        suppress_welcome=True,        # Suppress welcome message
-        use_subprocess=True          # Use subprocess to avoid circular import
+        driver_executable_path=None,
+        suppress_welcome=True,
+        use_subprocess=True,
+        version_main=131  # Set this to match your Chrome version
     )
     return driver
 
@@ -65,7 +67,7 @@ def scrape(max_pages=1):
             # Initialize dictionary to store data by page
             all_pages_data = {}
 
-            def scroll_gradually(driver, pause_time=0.125):
+            def scroll_gradually(driver, pause_time=0.225):
                 """Scroll until no new content loads"""
                 # Initial wait for first batch of content
                 time.sleep(pause_time)
@@ -74,7 +76,7 @@ def scrape(max_pages=1):
                 scroll_script = """
                     return new Promise((resolve) => {
                         const windowHeight = window.innerHeight;
-                        const scrollStep = windowHeight ;  
+                        const scrollStep = windowHeight * 0.75;  
                         const scrollInterval = setInterval(() => {
                             const scrollHeight = document.documentElement.scrollHeight;
                             const scrollPosition = window.pageYOffset;

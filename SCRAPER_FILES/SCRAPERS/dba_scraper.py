@@ -29,7 +29,9 @@ def init_driver():
             options=chrome_options,
             driver_executable_path=None,  # Let it find the driver automatically
             suppress_welcome=True,        # Suppress welcome message
-            use_subprocess=False          # Changed to False to avoid cleanup issues
+            use_subprocess=False,          # Changed to False to avoid cleanup issues
+            version_main=131  # Set this to match your Chrome version
+
         )
         return driver
     except Exception as e:

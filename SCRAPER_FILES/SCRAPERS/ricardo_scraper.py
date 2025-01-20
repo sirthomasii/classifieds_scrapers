@@ -27,7 +27,9 @@ def init_driver():
         options=chrome_options,
         driver_executable_path=None,  # Let it find the driver automatically
         suppress_welcome=True,        # Suppress welcome message
-        use_subprocess=True          # Use subprocess to avoid circular import
+        use_subprocess=True,          # Use subprocess to avoid circular import
+        version_main=131  # Set this to match your Chrome version
+
     )
     
     # Minimize the window after creation
