@@ -207,6 +207,13 @@ export function Viewport({
 
   return (
     <>
+      <Head>
+        <script 
+          async 
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4841275450464973"
+          crossOrigin="anonymous"
+        />
+      </Head>
       <Box style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
         <div style={{ 
           padding: '16px',
