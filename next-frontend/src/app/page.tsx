@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { MainLayout } from '@/components/MainLayout';
-import { Viewport } from '@/components/viewport/viewport';
+import { Viewport } from './viewport/viewport';
 import { useQuery } from '@tanstack/react-query';
 
 export default function Home() {

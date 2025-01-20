@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Container, Box } from '@mantine/core';
 import classes from './MainLayout.module.css';
-import { Viewport } from './viewport/viewport';
+import { Viewport } from '@/app/viewport/viewport';
 import { Publication } from '@/types/publication';
 
 interface MainLayoutProps {
