@@ -34,7 +34,7 @@ export function Viewport({
   const gridRef = useRef<HTMLDivElement>(null);
   const resizeTimeoutRef = useRef<NodeJS.Timeout>();
   const searchTimeoutRef = useRef<NodeJS.Timeout>();
-  const itemsPerPage = 15;
+  const [itemsPerPage, setItemsPerPage] = useState(15);
   const bufferSize = 1000;
 
   const filteredData = marketplaceData?.items ?? [];
@@ -167,6 +167,22 @@ export function Viewport({
       setSearchSuggestions([]);
     }
   }, [searchQuery, marketplaceData]);
+
+  // Add window resize handler for responsive itemsPerPage
+  useEffect(() => {
+    const handleItemsPerPage = () => {
+      setItemsPerPage(window.innerWidth <= 768 ? 14 : 15);
+    };
+
+    // Set initial value
+    handleItemsPerPage();
+
+    // Add event listener
+    window.addEventListener('resize', handleItemsPerPage);
+
+    // Cleanup
+    return () => window.removeEventListener('resize', handleItemsPerPage);
+  }, []);
 
   const getFlagComponent = (source: string) => {
     switch(source) {
