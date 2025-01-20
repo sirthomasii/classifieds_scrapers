@@ -1,6 +1,26 @@
-import { TextInput, Select } from '@mantine/core';
+import { TextInput, Select, ComboboxData } from '@mantine/core';
 import { IconSearch } from '@tabler/icons-react';
 import styles from '../viewport/viewport.module.css';
+import { SE, GB, DE, PL, DK, FI, CH } from 'country-flag-icons/react/3x2';
+
+const FLAG_SIZE = { width: '20px', height: '12px', marginRight: '8px' };
+
+interface MarketplaceItem {
+  label: string;
+  value: string;
+  flag?: JSX.Element;
+}
+
+const MARKETPLACE_DATA: MarketplaceItem[] = [
+  { label: '🌍 All Marketplaces', value: 'all' },
+  { label: 'Blocket', value: 'blocket', flag: <SE style={FLAG_SIZE} /> },
+  { label: 'Gumtree', value: 'gumtree', flag: <GB style={FLAG_SIZE} /> },
+  { label: 'Kleinanzeigen', value: 'kleinanzeigen', flag: <DE style={FLAG_SIZE} /> },
+  { label: 'OLX', value: 'olx', flag: <PL style={FLAG_SIZE} /> },
+  { label: 'DBA', value: 'dba', flag: <DK style={FLAG_SIZE} /> },
+  { label: 'Tori', value: 'tori', flag: <FI style={FLAG_SIZE} /> },
+  { label: 'Ricardo', value: 'ricardo', flag: <CH style={FLAG_SIZE} /> },
+] as const;
 
 interface HeaderProps {
   searchQuery: string;
@@ -27,22 +47,23 @@ export function Header({
       gap: '16px',
       borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
     }} className={styles.headerContainer}>
-      <div className={styles.logoText}>Fleatronics</div>
+      <div className={styles.logoText} style={{ 
+        userSelect: 'none',
+        WebkitUserSelect: 'none',
+        msUserSelect: 'none'
+      }}>Fleatronics</div>
       <div className={styles.controlsWrapper}>
         <Select
           className={styles.marketplaceSelect}
           value={selectedMarketplace}
           onChange={(value) => onMarketplaceChange(value || 'all')}
-          data={[
-            { value: 'all', label: 'All Marketplaces' },
-            { value: 'blocket', label: 'Blocket' },
-            { value: 'gumtree', label: 'Gumtree' },
-            { value: 'kleinanzeigen', label: 'Kleinanzeigen' },
-            { value: 'olx', label: 'OLX' },
-            { value: 'dba', label: 'DBA' },
-            { value: 'tori', label: 'Tori' },
-            { value: 'ricardo', label: 'Ricardo' },
-          ]}
+          data={MARKETPLACE_DATA}
+          renderOption={({ option }) => (
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              {(option as MarketplaceItem).flag}
+              <span>{option.label}</span>
+            </div>
+          )}
           style={{ width: '200px' }}
           styles={{
             input: {
