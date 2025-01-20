@@ -37,9 +37,7 @@ export function Viewport({
   const searchTimeoutRef = useRef<NodeJS.Timeout>();
   const [itemsPerPage, setItemsPerPage] = useState(15);
   const bufferSize = 1000;
-  const [showGDPR, setShowGDPR] = useState(() => {
-    return !localStorage.getItem('gdprAccepted');
-  });
+  const [showGDPR, setShowGDPR] = useState(true);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const filteredData = marketplaceData?.items ?? [];
@@ -210,6 +208,14 @@ export function Viewport({
 
     // Cleanup
     return () => window.removeEventListener('resize', handleItemsPerPage);
+  }, []);
+
+  useEffect(() => {
+    // Check localStorage only on client side
+    const gdprAccepted = localStorage.getItem('gdprAccepted');
+    if (gdprAccepted) {
+      setShowGDPR(false);
+    }
   }, []);
 
   const handleGDPRAccept = () => {
