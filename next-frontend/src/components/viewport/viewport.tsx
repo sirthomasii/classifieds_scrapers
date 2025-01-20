@@ -2,10 +2,8 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { Box, Skeleton, Select, TextInput } from '@mantine/core';
 import { Publication } from '@/types/publication';
 import styles from './viewport.module.css';
-import Image from 'next/image';
 import { IconSearch } from '@tabler/icons-react';
 import { GB, DK, FI, CH, DE, RO, SE } from 'country-flag-icons/react/3x2';
-import Head from 'next/head';
 
 interface ViewportProps {
   marketplaceData: {
@@ -146,6 +144,15 @@ export function Viewport({
     currentPage * itemsPerPage
   );
 
+  // Insert ad at random position
+  const displayedItemsWithAd = useMemo(() => {
+    if (displayedItems.length === 0) return displayedItems;
+    const randomIndex = Math.floor(Math.random() * displayedItems.length);
+    const result = [...displayedItems] as (Publication | 'ad')[];
+    result.splice(randomIndex, 0, 'ad');
+    return result;
+  }, [displayedItems]);
+
   const isLoading = !marketplaceData;
 
   // Generate search suggestions from titles
@@ -171,7 +178,16 @@ export function Viewport({
   // Add window resize handler for responsive itemsPerPage
   useEffect(() => {
     const handleItemsPerPage = () => {
-      setItemsPerPage(window.innerWidth <= 768 ? 14 : 15);
+      const width = window.innerWidth;
+      if (width > 1400) { // 5 columns
+        setItemsPerPage(14);
+      } else if (width > 1100) { // 4 columns
+        setItemsPerPage(11);
+      } else if (width > 768) { // 3 columns
+        setItemsPerPage(11);
+      } else { // 2 columns
+        setItemsPerPage(11);
+      }
     };
 
     // Set initial value
@@ -207,13 +223,6 @@ export function Viewport({
 
   return (
     <>
-      <Head>
-        <script 
-          async 
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4841275450464973"
-          crossOrigin="anonymous"
-        />
-      </Head>
       <Box style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
         <div style={{ 
           padding: '16px',
@@ -317,86 +326,128 @@ export function Viewport({
                 </div>
               ))
             ) : (
-              displayedItems.map((item, index) => (
-                <div 
-                  key={`${item.link}-${index}`}
-                  className={styles.itemCard}
-                  onClick={() => item.link && window.open(item.link, '_blank')}
-                >
-                  <div className={styles.imageContainer}>
-                    {item.main_image && (
-                      <img
-                        src={item.main_image}
-                        alt={getDisplayTitle(item) || 'Product image'}
-                        className={styles.imageLoading}
-                        onError={(e) => {
-                          const imgElement = e.target as HTMLImageElement;
-                          imgElement.style.display = 'none';
-                          const container = imgElement.parentElement;
-                          if (container) {
-                            container.style.backgroundColor = '#333';
-                          }
-                        }}
-                        onLoad={(e) => {
-                          const imgElement = e.target as HTMLImageElement;
-                          imgElement.style.display = 'block';
-                          imgElement.classList.remove(styles.imageLoading);
-                        }}
-                        style={{ 
-                          objectFit: 'cover',
-                          position: 'absolute',
-                          top: 0,
-                          left: 0,
-                          width: '100%',
-                          height: '100%'
+              displayedItemsWithAd.map((item, index) => {
+                if (item === 'ad') {
+                  return (
+                    <div key={`ad-${index}`} className={styles.itemCard}>
+                      <div style={{ 
+                        position: 'absolute', 
+                        top: '8px', 
+                        left: '8px', 
+                        fontSize: '12px', 
+                        fontStyle: 'italic',
+                        color: 'rgba(255, 255, 255, 0.5)',
+                        zIndex: 1
+                      }}>
+                        Advertisement
+                      </div>
+                      <div style={{ width: '100%', height: '100%' }}
+                        dangerouslySetInnerHTML={{
+                          __html: `
+                            <!-- AD_002 -->
+                            <ins class="adsbygoogle"
+                                 style="display:block; width:100%; height:100%;"
+                                 data-ad-client="ca-pub-4841275450464973"
+                                 data-ad-slot="4182640824"
+                                 data-ad-format="auto"
+                                 data-full-width-responsive="true"></ins>
+                            <script>
+                                 (adsbygoogle = window.adsbygoogle || []).push({});
+                            </script>
+                          `
                         }}
                       />
-                    )}
-                  </div>
-                  <div className={styles.itemContent}>
-                    <div style={{ 
-                      fontSize: '16px', 
-                      fontWeight: 'bold',
-                      marginBottom: '8px',
-                      color: 'white'
-                    }}>
-                      {item.title?.english || item.title?.original}
                     </div>
-                    <div style={{ 
-                      fontSize: '14px',
-                      color: '#4CAF50',
-                      marginBottom: '8px'
-                    }}>
-                      {typeof item.price?.eur === 'number' ? `${item.price.eur} €` : 'Negotiable'}
+                  );
+                }
+
+                return (
+                  <div 
+                    key={`${item.link}-${index}`}
+                    className={styles.itemCard}
+                    onClick={() => item.link && window.open(item.link, '_blank')}
+                  >
+                    <div className={styles.imageContainer}>
+                      {item.main_image && (
+                        <img
+                          src={item.main_image}
+                          alt={getDisplayTitle(item) || 'Product image'}
+                          className={styles.imageLoading}
+                          onError={(e) => {
+                            const imgElement = e.target as HTMLImageElement;
+                            imgElement.style.display = 'none';
+                            const container = imgElement.parentElement;
+                            if (container) {
+                              container.style.backgroundColor = '#333';
+                            }
+                          }}
+                          onLoad={(e) => {
+                            const imgElement = e.target as HTMLImageElement;
+                            imgElement.style.display = 'block';
+                            imgElement.classList.remove(styles.imageLoading);
+                          }}
+                          style={{ 
+                            objectFit: 'cover',
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            width: '100%',
+                            height: '100%'
+                          }}
+                        />
+                      )}
                     </div>
-                    <div style={{ 
-                      fontSize: '12px',
-                      color: '#aaa',
-                      marginBottom: '4px'
-                    }}>
-                      <span style={{ 
-                        backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                        padding: '2px 6px',
-                        borderRadius: '4px',
-                        marginRight: '8px',
-                        textTransform: 'capitalize',
-                        display: 'inline-flex',
-                        alignItems: 'center'
+                    <div className={styles.itemContent}>
+                      <div style={{ 
+                        fontSize: '16px', 
+                        fontWeight: 'bold',
+                        marginBottom: '8px',
+                        color: 'white',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                        lineHeight: '1.2em',
+                        maxHeight: '2.4em'  // 1.2em * 2 lines
                       }}>
-                        {item.source}&nbsp;
-                        {getFlagComponent(item.source)}
-                      </span>
-                      {item.timestamp ? new Date(item.timestamp).toLocaleString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        hour12: false
-                      }) : 'No date'}
+                        {item.title?.english || item.title?.original}
+                      </div>
+                      <div style={{ 
+                        fontSize: '14px',
+                        color: '#4CAF50',
+                        marginBottom: '8px'
+                      }}>
+                        {typeof item.price?.eur === 'number' ? `${item.price.eur} €` : 'Negotiable'}
+                      </div>
+                      <div style={{ 
+                        fontSize: '12px',
+                        color: '#aaa',
+                        marginBottom: '4px'
+                      }}>
+                        <span style={{ 
+                          backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                          padding: '2px 6px',
+                          borderRadius: '4px',
+                          marginRight: '8px',
+                          textTransform: 'capitalize',
+                          display: 'inline-flex',
+                          alignItems: 'center'
+                        }}>
+                          {item.source}&nbsp;
+                          {getFlagComponent(item.source)}
+                        </span>
+                        {item.timestamp ? new Date(item.timestamp).toLocaleString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          hour12: false
+                        }) : 'No date'}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
 
@@ -432,6 +483,7 @@ export function Viewport({
           )}
         </div>
       </Box>
+
     </>
   );
 }
