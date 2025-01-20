@@ -55,16 +55,21 @@ export function Viewport({
   };
 
   // Memoize searched data to prevent unnecessary filtering
-  const searchedData = useMemo(() => 
-    activeSearch 
-      ? sortedData.filter(item => {
+  const searchedData = useMemo(() => {
+    // First filter out items with empty images
+    const itemsWithImages = sortedData.filter(item => 
+      item.main_image && item.main_image.trim() !== ''
+    );
+    
+    // Then apply search filter if there's an active search
+    return activeSearch 
+      ? itemsWithImages.filter(item => {
           const title = getDisplayTitle(item);
           const searchTerm = activeSearch.toLowerCase();
           return title && title.toLowerCase().includes(searchTerm);
         })
-      : sortedData,
-    [sortedData, activeSearch]
-  );
+      : itemsWithImages;
+  }, [sortedData, activeSearch]);
 
   // Debounced search handler
   const handleSearch = useCallback((value: string) => {
