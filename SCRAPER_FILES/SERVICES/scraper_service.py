@@ -12,13 +12,13 @@ from dotenv import load_dotenv
 
 # Define num pages per batch
 SCRAPER_CONFIG = {
-    # 'kleinanzeigen': 4,
-    # 'blocket': 2,
-    # 'gumtree': 2,
-    'tori': 2,
-    # 'olx': 2,
-    # 'ricardo': 1,
-    # 'dba': 1
+    'kleinanzeigen': 4,
+    'blocket': 2,
+    'gumtree': 2,
+    'tori': 3,
+    'olx': 2,
+    'ricardo': 1,
+    'dba': 1
 }
 
 class ScraperService:
@@ -139,8 +139,9 @@ class ScraperService:
                 and os.path.splitext(f)[0].replace('_scraper', '') in current_config
             ]
 
-            # Sort to ensure kleinanzeigen runs first
-            scraper_files.sort(key=lambda x: 0 if 'kleinanzeigen' in x.lower() else 1)
+            # Sort to ensure kleinanzeigen runs first, randomize the rest
+            import random
+            scraper_files.sort(key=lambda x: -1 if 'kleinanzeigen' in x.lower() else random.random() + 1)
 
             # Print configurations
             print("Running scrapers with the following configurations:")
