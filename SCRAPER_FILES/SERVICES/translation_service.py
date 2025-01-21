@@ -85,10 +85,10 @@ class TranslationService:
                 # Collect all titles with their references
                 translations_needed = []
                 title_refs = []
-                # debug_data = {
-                #     'site_name': site_name,
-                #     'chunks': []
-                # }
+                debug_data = {
+                    'site_name': site_name,
+                    'chunks': []
+                }
 
                 # Iterate through all pages and ads
                 for page_data in data.values():
@@ -100,11 +100,13 @@ class TranslationService:
                 if translations_needed:
                     chunks = self._split_into_chunks(translations_needed)
                     translated_titles = [None] * len(translations_needed)  # Pre-initialize with None
+                    chunk_offset = 0  # Track overall position in translations_needed
 
                     for chunk_index, chunk in enumerate(chunks):
                         chunk_debug = {
                             'chunk_index': chunk_index,
                             'original_titles': chunk,
+                            'chunk_offset': chunk_offset,  # Add offset to debug data
                             'indexed_chunk_text': '',
                             'translated_chunk': '',
                             'split_translations': []
@@ -112,33 +114,41 @@ class TranslationService:
                         
                         try:
                             # Add index to each title's separator with padding
-                            indexed_titles = [f"{title}{SEPARATOR_BASE}{str(i).zfill(4)}" for i, title in enumerate(chunk)]
+                            indexed_titles = [f"{SEPARATOR_BASE}{str(i + chunk_offset).zfill(4)} {title}" 
+                                               for i, title in enumerate(chunk)]
                             chunk_text = " ".join(indexed_titles)
                             chunk_debug['indexed_chunk_text'] = chunk_text
                             
                             translated_chunk = self.translator.translate(chunk_text)
                             chunk_debug['translated_chunk'] = translated_chunk
                             
-                            # Split translations by separator
+                            # Process each translation except the last empty one
                             translations = translated_chunk.split(SEPARATOR_BASE)
                             
-                            # Process each translation except the last empty one
-                            for i, trans in enumerate(translations[:-1]):
-                                if trans.strip():
-                                    # Get the index from the next separator position
-                                    index_str = translations[i+1][:4]  # Get first 4 chars of next segment
-                                    if index_str.isdigit():
-                                        index = int(index_str)
-                                        # Remove any leading index numbers (e.g., "0000 ", "0001 ")
-                                        translation = re.sub(r'^\d{4}\s*', '', trans.strip())
-                                        if 0 <= index < len(translated_titles):
-                                            translated_titles[index] = translation
-                                            chunk_debug['split_translations'].append({
-                                                'index': index,
-                                                'translation': translation
-                                            })
+                            # Skip the first empty element if it exists
+                            if translations and not translations[0].strip():
+                                translations = translations[1:]
                             
+                            for trans in translations:
+                                if not trans.strip():
+                                    continue
+                                    
+                                # First get the 4-digit index at the start
+                                index_str = trans[:4]
+                                if index_str.isdigit():
+                                    index = int(index_str)
+                                    # Get everything after the index number
+                                    translation = trans[4:].strip()
+                                    
+                                    if 0 <= index < len(translated_titles):
+                                        translated_titles[index] = translation
+                                        chunk_debug['split_translations'].append({
+                                            'index': index,
+                                            'translation': translation
+                                        })
+                                    
                             time.sleep(1)  # Rate limiting
+                            chunk_offset += len(chunk)  # Increment offset by chunk size
                         except Exception as e:
                             error_msg = f"Translation error for chunk {chunk_index}: {str(e)}"
                             print(error_msg)
@@ -151,11 +161,31 @@ class TranslationService:
                         # finally:
                         #     debug_data['chunks'].append(chunk_debug)
 
-                    # # Save debug data to JSON file
-                    # timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-                    # debug_filename = f'translation_debug_{site_name}_{timestamp}.json'
-                    # with open(debug_filename, 'w', encoding='utf-8') as f:
-                    # json.dump(debug_data, f, ensure_ascii=False, indent=2)
+                    # Save debug data to JSON files
+                    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                    
+                    # Save raw translation process debug data
+                    # process_debug_filename = f'translation_process_{site_name}_{timestamp}.json'
+                    # with open(process_debug_filename, 'w', encoding='utf-8') as f:
+                    #     json.dump(debug_data, f, ensure_ascii=False, indent=2)
+                    
+                    # Save simple comparison of original vs translated titles
+                    # comparison_data = {
+                    #     'site_name': site_name,
+                    #     'timestamp': timestamp,
+                    #     'translations': [
+                    #         {
+                    #             'index': i,
+                    #             'original': title_refs[i]['original'],
+                    #             'translated': translated_titles[i] if translated_titles[i] else title_refs[i]['original']
+                    #         }
+                    #         for i in range(len(title_refs))
+                    #     ]
+                    # }
+                    
+                    # comparison_filename = f'translation_results_{site_name}_{timestamp}.json'
+                    # with open(comparison_filename, 'w', encoding='utf-8') as f:
+                    #     json.dump(comparison_data, f, ensure_ascii=False, indent=2)
 
                     # Update original data structure with position-verified translations
                     for i, (title_obj, translation) in enumerate(zip(title_refs, translated_titles)):
