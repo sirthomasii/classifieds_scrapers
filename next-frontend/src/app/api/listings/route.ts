@@ -11,8 +11,8 @@ const listingSchema = new mongoose.Schema({
   main_image: String,
   timestamp: Date,
   title: {
-    // original: String,
-    english: String
+    english: String,
+    original: String
   },
   price: {
     eur: String
@@ -43,17 +43,48 @@ async function connectDB() {
   return cachedConnection;
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '50');
+    const source = searchParams.get('source') || null;
+    const search = searchParams.get('search') || '';
+
+    console.log('Search query:', search);
+
     await connectDB();
     
-    const listings = await Listing.find({})
-      .select('link source main_image timestamp title.english title.original price.eur')
-      .maxTimeMS(5000)
-      .lean();
+    const query: any = {};
+    if (source && source !== 'all') {
+      query.source = source;
+    }
+    if (search) {
+      query.$or = [
+        { 'title.english': { $regex: search, $options: 'i' } },
+        // { 'title.original': { $regex: search, $options: 'i' } }
+      ];
+    }
+    
+    const [listings, total] = await Promise.all([
+      Listing.find(query)
+        .select('link source main_image timestamp title.english title.original price.eur')
+        .sort({ timestamp: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .maxTimeMS(5000)
+        .lean(),
+      Listing.countDocuments(query)
+    ]);
+
+    console.log('Listings:', listings);
+    console.log('Total:', total);
 
     return NextResponse.json({ 
       data: listings || [],
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
       error: null 
     });
     
@@ -61,7 +92,7 @@ export async function GET() {
     const err = error as Error;
     console.error('Database operation failed:', err);
     return NextResponse.json(
-      { error: 'Database operation failed', data: [] },
+      { error: 'Database operation failed', data: [], total: 0, page: 1, totalPages: 0 },
       { status: 500 }
     );
   }
