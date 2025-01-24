@@ -165,7 +165,7 @@ def clean_price(price_str):
 def scrape(max_pages=2):
     # URLs to scrape
     urls = [
-        ("https://www.marktplaats.nl/l/computers-en-software/videokaarten/", "videocards"),
+        ("https://www.marktplaats.nl/l/computers-en-software/", "computers"),
         # ("https://www.kleinanzeigen.de/s-musikinstrumente/", "music")
     ]
 

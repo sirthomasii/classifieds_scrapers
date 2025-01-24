@@ -1,7 +1,7 @@
 import { TextInput, Select, ComboboxData } from '@mantine/core';
 import { IconSearch } from '@tabler/icons-react';
 import styles from '../viewport/viewport.module.css';
-import { SE, GB, DE, PL, DK, FI, CH } from 'country-flag-icons/react/3x2';
+import { SE, GB, DE, PL, DK, FI, NL, CH } from 'country-flag-icons/react/3x2';
 
 const FLAG_SIZE = { width: '20px', height: '12px', marginRight: '8px' };
 
@@ -14,6 +14,7 @@ interface MarketplaceItem {
 const MARKETPLACE_DATA: MarketplaceItem[] = [
   { label: '🌍 All Marketplaces', value: 'all' },
   { label: 'Blocket', value: 'blocket', flag: <SE style={FLAG_SIZE} /> },
+  { label: 'Marktplaats', value: 'blocket', flag: <NL style={FLAG_SIZE} /> },
   { label: 'Gumtree', value: 'gumtree', flag: <GB style={FLAG_SIZE} /> },
   { label: 'Kleinanzeigen', value: 'kleinanzeigen', flag: <DE style={FLAG_SIZE} /> },
   { label: 'OLX', value: 'olx', flag: <PL style={FLAG_SIZE} /> },
