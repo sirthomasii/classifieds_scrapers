@@ -55,7 +55,7 @@ export async function GET(request: Request) {
 
     await connectDB();
     
-    let query: any = {};
+    const query: any = {};
     if (source && source !== 'all') {
       query.source = source;
     }
