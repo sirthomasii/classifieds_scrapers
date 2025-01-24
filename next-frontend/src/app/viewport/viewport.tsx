@@ -18,6 +18,8 @@ interface ViewportProps {
   selectedMarketplace: string;
   onMarketplaceChange: (marketplace: string) => void;
   onLoadMore: (buffer: number) => void;
+  onSearch: (query: string) => void;
+
 }
 
 export function Viewport({
@@ -25,7 +27,8 @@ export function Viewport({
   selectedCategory,
   selectedMarketplace,
   onMarketplaceChange,
-  onLoadMore
+  onLoadMore,
+  onSearch
 }: ViewportProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
@@ -57,23 +60,6 @@ export function Viewport({
     return item.title.english || item.title.original || '';
   };
 
-  // Memoize searched data to prevent unnecessary filtering
-  const searchedData = useMemo(() => {
-    // First filter out items with empty images
-    const itemsWithImages = sortedData.filter(item => 
-      item.main_image && item.main_image.trim() !== ''
-    );
-    
-    // Then apply search filter if there's an active search
-    return activeSearch 
-      ? itemsWithImages.filter(item => {
-          const title = getDisplayTitle(item);
-          const searchTerm = activeSearch.toLowerCase();
-          return title && title.toLowerCase().includes(searchTerm);
-        })
-      : itemsWithImages;
-  }, [sortedData, activeSearch]);
-
   // Debounced search handler
   const handleSearch = useCallback((value: string) => {
     setIsSearching(true);
@@ -83,8 +69,10 @@ export function Viewport({
     searchTimeoutRef.current = setTimeout(() => {
       setActiveSearch(value);
       setIsSearching(false);
+      // Call the onSearch prop to trigger API call
+      onSearch(value);
     }, 300);
-  }, []);
+  }, [onSearch]);
 
   // Cleanup timeouts
   useEffect(() => {
@@ -140,7 +128,7 @@ export function Viewport({
     setCurrentPage(1);
   }, [activeSearch, selectedCategory, selectedMarketplace]);
 
-  const totalPages = Math.ceil(searchedData.length / itemsPerPage);
+  const totalPages = Math.ceil(sortedData.length / itemsPerPage);
   
   // Ensure current page is valid
   useEffect(() => {
@@ -149,7 +137,8 @@ export function Viewport({
     }
   }, [totalPages, currentPage]);
 
-  const displayedItems = searchedData.slice(
+  // Use sortedData directly since filtering is now done by the API
+  const displayedItems = sortedData.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );

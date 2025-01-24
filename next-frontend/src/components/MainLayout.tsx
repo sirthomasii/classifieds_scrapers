@@ -45,6 +45,7 @@ export function MainLayout({
   const [currentPage, setCurrentPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Cleanup function for ResizeObserver
   useEffect(() => {
@@ -71,7 +72,7 @@ export function MainLayout({
       try {
         setIsLoading(true);
         const response = await fetch(
-          `/api/listings?page=${currentPage}&limit=50${selectedMarketplace !== 'all' ? `&source=${selectedMarketplace}` : ''}`
+          `/api/listings?page=${currentPage}&limit=50${selectedMarketplace !== 'all' ? `&source=${selectedMarketplace}` : ''}${searchQuery ? `&search=${encodeURIComponent(searchQuery)}` : ''}`
         );
         const result = await response.json();
 
@@ -100,8 +101,9 @@ export function MainLayout({
           ricardo: { all: [] }
         });
 
+        // If it's the first page, replace data, otherwise append
         setMarketplaceData(prev => {
-          if (!prev) return groupedData;
+          if (!prev || currentPage === 1) return groupedData;
           
           // Merge new data with existing data
           const merged = { ...prev };
@@ -120,10 +122,15 @@ export function MainLayout({
     };
 
     fetchData();
-  }, [currentPage, selectedMarketplace]);
+  }, [currentPage, selectedMarketplace, searchQuery]);
 
   const handleLoadMore = () => {
     setCurrentPage(prev => prev + 1);
+  };
+
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    setCurrentPage(1); // Reset to first page when searching
   };
 
   const getCurrentMarketplaceData = () => {
@@ -174,6 +181,7 @@ export function MainLayout({
           selectedMarketplace={selectedMarketplace}
           onMarketplaceChange={setSelectedMarketplace}
           onLoadMore={handleLoadMore}
+          onSearch={handleSearch}
         />
       </Box>
     </Container>

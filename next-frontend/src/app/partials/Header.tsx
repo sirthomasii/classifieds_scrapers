@@ -87,11 +87,11 @@ export function Header({
           className={styles.searchBar}
           style={{ flex: 1 }}
           value={searchQuery}
-          onChange={(event) => onSearchChange(event.currentTarget.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              onSearch(searchQuery);
-            }
+          onChange={(event) => {
+            const value = event.currentTarget.value;
+            onSearchChange(value);
+            // Trigger search immediately
+            onSearch(value);
           }}
           placeholder={`Search ${totalItems.toLocaleString()} listings...`}
           leftSection={

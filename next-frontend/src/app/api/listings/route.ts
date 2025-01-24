@@ -49,10 +49,22 @@ export async function GET(request: Request) {
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '50');
     const source = searchParams.get('source') || null;
+    const search = searchParams.get('search') || '';
+
+    console.log('Search query:', search);
 
     await connectDB();
     
-    const query = source && source !== 'all' ? { source } : {};
+    let query: any = {};
+    if (source && source !== 'all') {
+      query.source = source;
+    }
+    if (search) {
+      query.$or = [
+        { 'title.english': { $regex: search, $options: 'i' } },
+        // { 'title.original': { $regex: search, $options: 'i' } }
+      ];
+    }
     
     const [listings, total] = await Promise.all([
       Listing.find(query)
@@ -64,6 +76,9 @@ export async function GET(request: Request) {
         .lean(),
       Listing.countDocuments(query)
     ]);
+
+    console.log('Listings:', listings);
+    console.log('Total:', total);
 
     return NextResponse.json({ 
       data: listings || [],
