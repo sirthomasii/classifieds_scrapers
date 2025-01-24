@@ -42,6 +42,9 @@ export function MainLayout({
   } | null>(null);
   const [selectedMarketplace, setSelectedMarketplace] = useState(initialMarketplace);
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Cleanup function for ResizeObserver
   useEffect(() => {
@@ -66,7 +69,10 @@ export function MainLayout({
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch('/api/listings');
+        setIsLoading(true);
+        const response = await fetch(
+          `/api/listings?page=${currentPage}&limit=50${selectedMarketplace !== 'all' ? `&source=${selectedMarketplace}` : ''}`
+        );
         const result = await response.json();
 
         // Check if we have data in the expected format
@@ -75,6 +81,8 @@ export function MainLayout({
           setMarketplaceData(null);
           return;
         }
+
+        setTotalItems(result.total);
 
         // Group data by source
         const groupedData = result.data.reduce((acc: Record<string, { all: Array<Publication> }>, item: Publication) => {
@@ -92,15 +100,31 @@ export function MainLayout({
           ricardo: { all: [] }
         });
 
-        setMarketplaceData(groupedData);
+        setMarketplaceData(prev => {
+          if (!prev) return groupedData;
+          
+          // Merge new data with existing data
+          const merged = { ...prev };
+          Object.keys(groupedData).forEach(source => {
+            if (!merged[source as keyof typeof merged]) merged[source as keyof typeof merged] = { all: [] };
+            merged[source as keyof typeof merged].all = [...merged[source as keyof typeof merged].all, ...groupedData[source].all];
+          });
+          return merged;
+        });
       } catch (error) {
         console.error('Error fetching data:', error);
         setMarketplaceData(null);
+      } finally {
+        setIsLoading(false);
       }
     };
 
     fetchData();
-  }, []);
+  }, [currentPage, selectedMarketplace]);
+
+  const handleLoadMore = () => {
+    setCurrentPage(prev => prev + 1);
+  };
 
   const getCurrentMarketplaceData = () => {
     if (!marketplaceData) return undefined;
@@ -110,16 +134,18 @@ export function MainLayout({
         .flatMap(marketplace => marketplace.all || []);
       return { 
         items: allItems,
-        total: allItems.length,
-        currentBuffer: allItems.length
+        total: totalItems,
+        currentBuffer: allItems.length,
+        isLoading
       };
     }
 
     const items = marketplaceData[selectedMarketplace as keyof typeof marketplaceData]?.all || [];
     return {
       items,
-      total: items.length,
-      currentBuffer: items.length
+      total: totalItems,
+      currentBuffer: items.length,
+      isLoading
     };
   };
 
@@ -147,7 +173,7 @@ export function MainLayout({
           selectedCategory={selectedCategory}
           selectedMarketplace={selectedMarketplace}
           onMarketplaceChange={setSelectedMarketplace}
-          onLoadMore={() => {}}
+          onLoadMore={handleLoadMore}
         />
       </Box>
     </Container>
