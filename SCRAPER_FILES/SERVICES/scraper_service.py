@@ -13,6 +13,7 @@ from dotenv import load_dotenv
 # Define num pages per batch
 SCRAPER_CONFIG = {
     'kleinanzeigen': 4,
+    'marktplaats': 4,
     'blocket': 2,
     'gumtree': 2,
     'tori': 3,
