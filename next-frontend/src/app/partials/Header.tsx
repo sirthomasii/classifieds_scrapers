@@ -14,7 +14,7 @@ interface MarketplaceItem {
 const MARKETPLACE_DATA: MarketplaceItem[] = [
   { label: '🌍 All Marketplaces', value: 'all' },
   { label: 'Blocket', value: 'blocket', flag: <SE style={FLAG_SIZE} /> },
-  { label: 'Marktplaats', value: 'blocket', flag: <NL style={FLAG_SIZE} /> },
+  { label: 'Marktplaats', value: 'marktplaats', flag: <NL style={FLAG_SIZE} /> },
   { label: 'Gumtree', value: 'gumtree', flag: <GB style={FLAG_SIZE} /> },
   { label: 'Kleinanzeigen', value: 'kleinanzeigen', flag: <DE style={FLAG_SIZE} /> },
   { label: 'OLX', value: 'olx', flag: <PL style={FLAG_SIZE} /> },
