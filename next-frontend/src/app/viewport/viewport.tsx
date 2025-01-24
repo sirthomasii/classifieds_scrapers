@@ -152,6 +152,11 @@ export function Viewport({
     return result;
   }, [displayedItems]);
 
+// Filter out the 'ad' items
+const displayedItemsWithoutAd = useMemo(() => {
+  return displayedItemsWithAd.filter(item => item !== 'ad');
+}, [displayedItemsWithAd]);
+
   const isLoading = !marketplaceData;
 
   // Generate search suggestions from titles
@@ -179,13 +184,13 @@ export function Viewport({
     const handleItemsPerPage = () => {
       const width = window.innerWidth;
       if (width > 1400) { // 5 columns
-        setItemsPerPage(14);
+        setItemsPerPage(15);
       } else if (width > 1100) { // 4 columns
-        setItemsPerPage(11);
+        setItemsPerPage(12);
       } else if (width > 768) { // 3 columns
-        setItemsPerPage(11);
+        setItemsPerPage(12);
       } else { // 2 columns
-        setItemsPerPage(11);
+        setItemsPerPage(12);
       }
     };
 
@@ -252,10 +257,19 @@ export function Viewport({
               </div>
             ))
           ) : (
-            displayedItemsWithAd.map((item, index) => {
-              if (item === 'ad') {
-                return <AdCard key={`ad-${index}`} />;
-              }
+            // displayedItemsWithAd.map((item, index) => {
+            //   if (item === 'ad') {
+            //     return <AdCard key={`ad-${index}`} />;
+            //   }
+            //   return (
+            //     <ListingCard 
+            //       key={`${item.link}-${index}`}
+            //       item={item}
+            //       getDisplayTitle={getDisplayTitle}
+            //     />
+            //   );
+            // })
+            displayedItemsWithoutAd.map((item, index) => {
               return (
                 <ListingCard 
                   key={`${item.link}-${index}`}
