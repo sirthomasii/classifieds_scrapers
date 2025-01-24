@@ -43,63 +43,110 @@ def init_driver():
 
 def scroll_gradually(driver, pause_time=0.125):
     """Scroll until no new content loads"""
-    # Initial wait for first batch of content
+    # print("Starting scroll operation...")
     time.sleep(pause_time)
     
-    # Get initial height
-    last_height = driver.execute_script("return document.documentElement.scrollHeight")
+    # Get initial page height
+    initial_height = driver.execute_script("return document.documentElement.scrollHeight")
+    # print(f"Initial page height: {initial_height}")
     
-    # Set a maximum number of scroll attempts
-    max_attempts = 30
-    attempts = 0
-    
-    while attempts < max_attempts:
-        # Scroll down by viewport height
-        driver.execute_script("window.scrollBy(0, window.innerHeight);")
-        
-        # Wait for potential new content
-        time.sleep(pause_time)
-        
-        # Calculate new scroll height
-        new_height = driver.execute_script("return document.documentElement.scrollHeight")
-        
-        # Break if no new content (heights equal)
-        if new_height == last_height:
-            break
+    # JavaScript function to scroll gradually
+    scroll_script = """
+        return new Promise((resolve) => {
+            let lastScrollHeight = 0;
+            let unchangedCount = 0;
+            const windowHeight = window.innerHeight;
+            const scrollStep = Math.min(300, windowHeight * 0.3);  // Fixed smaller step size
+            let currentPosition = window.pageYOffset;
             
-        last_height = new_height
-        attempts += 1
+            function checkAndScroll() {
+                const scrollHeight = document.documentElement.scrollHeight;
+                
+                console.log(`Current scroll position: ${currentPosition}, Total height: ${scrollHeight}`);
+                
+                if (currentPosition + windowHeight >= scrollHeight - 50 || 
+                    (scrollHeight === lastScrollHeight && ++unchangedCount >= 2)) {
+                    resolve('bottom');
+                    return;
+                }
+                
+                currentPosition = Math.min(currentPosition + scrollStep, scrollHeight - windowHeight);
+                window.scrollTo({
+                    top: currentPosition,
+                    behavior: 'smooth'
+                });
+                
+                unchangedCount = (scrollHeight === lastScrollHeight) ? unchangedCount : 0;
+                lastScrollHeight = scrollHeight;
+                setTimeout(checkAndScroll, 300);  // Slower interval
+            }
+            
+            checkAndScroll();
+        });
+    """
     
-    # Scroll back to top
-    driver.execute_script("window.scrollTo(0, 0);")
+    # Execute the gradual scroll
+    driver.execute_script(scroll_script)
+    time.sleep(1.5)
+    
+    # Gentle final verification scrolls
+    last_height = driver.execute_script("return document.documentElement.scrollHeight")
+    current_pos = driver.execute_script("return window.pageYOffset")
+    remaining_scroll = last_height - current_pos
+    
+    if remaining_scroll > 0:
+        driver.execute_script("""
+            window.scrollTo({
+                top: document.documentElement.scrollHeight,
+                behavior: 'smooth'
+            });
+        """)
+        time.sleep(1)
 
 def accept_cookies(driver):
     """Find and click the accept cookies button"""
     try:
-        # print("Looking for cookie consent button...")
-
-        # Wait for the cookie banner to be present
-        WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.ID, "gdpr-banner"))
-        )
-
-        # Locate the accept button using its data-testid or id
-        accept_button = driver.find_element(By.ID, "gdpr-banner-accept")
+        # First try the Sourcepoint iframe approach
+        try:
+            # Wait for and switch to the iframe - using partial match for SP iframe
+            iframe = WebDriverWait(driver, 5).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, 
+                    "iframe[title='SP Consent Message'], iframe[id^='sp_message_iframe_']"))
+            )
+            driver.switch_to.frame(iframe)
+            
+            # Try to find the accept button
+            accept_button = WebDriverWait(driver, 3).until(
+                EC.element_to_be_clickable((By.CSS_SELECTOR, 
+                    "button[title='Accepteren']"))
+            )
+            accept_button.click()
+            driver.switch_to.default_content()
+            return True
+        except Exception:
+            driver.switch_to.default_content()
+            
+        # Try finding button directly on the page
+        try:
+            accept_button = WebDriverWait(driver, 3).until(
+                EC.element_to_be_clickable((By.CSS_SELECTOR, """
+                    button[class*='cookie'],
+                    button[id*='cookie'],
+                    button[class*='consent'],
+                    #onetrust-accept-btn-handler,
+                    .accept-cookies-button
+                """))
+            )
+            accept_button.click()
+            return True
+        except Exception:
+            pass
+            
+        return False
         
-        # Click the accept button
-        accept_button.click()
-        
-        # print("Clicked accept button")
-
-        # Wait for the banner to be removed from the DOM
-        WebDriverWait(driver, 10).until(
-            EC.staleness_of(driver.find_element(By.ID, "gdpr-banner"))
-        )
-
-        return True
-
     except Exception as e:
         print(f"Could not handle cookie popup: {e}")
+        driver.switch_to.default_content()
         return False
 
 def clean_price(price_str):
@@ -119,7 +166,7 @@ def scrape(max_pages=2):
     # URLs to scrape
     urls = [
         ("https://www.marktplaats.nl/l/computers-en-software/videokaarten/", "videocards"),
-        ("https://www.kleinanzeigen.de/s-musikinstrumente/", "music")
+        # ("https://www.kleinanzeigen.de/s-musikinstrumente/", "music")
     ]
 
     all_pages_data = {}
@@ -160,12 +207,13 @@ def scrape(max_pages=2):
 
                     # Extract all ad URLs, titles, and images
                     page_data_list = []
-                    articles = page_soup.find_all('li', class_=lambda x: x and 'hz-Listing--list-item' in x)
+                    articles = page_soup.find_all('li', class_=lambda x: x and 'hz-Listing' in x)
                     for article in articles:
                         try:
                             # Check if ad is featured
-                            featured_div = article.find('span', string='hz-Listing-priority')
-                            is_featured = featured_div is not None
+                            featured_div = article.find('span', class_=lambda x: x and 'hz-Listing-seller-link' in x)
+                            seller_link = featured_div.find('a')
+                            is_featured = seller_link is not None
                             
                             # Get link
                             link_elem = article.find('a', class_=lambda x: x and 'hz-Link' in x)
@@ -186,8 +234,8 @@ def scrape(max_pages=2):
                             title = ' '.join(full_title.split()[:7]) if full_title else None
                             
                             # Get description
-                            description_container = article.find('p', class_=lambda x: x and 'description' in x)
-                            description = description_container.get_text(strip=True) if description_container else None
+                            # description_container = article.find('p', class_=lambda x: x and 'description' in x)
+                            # description = description_container.get_text(strip=True) if description_container else None
                             
                             # Get price
                             price_container = article.find('span', class_=lambda x: x and 'hz-text-price-label' in x)
@@ -203,7 +251,7 @@ def scrape(max_pages=2):
                             price = clean_price(price_text)
                             
                             # Get image
-                            imagebox = article.find('div', class_='imagebox srpimagebox')
+                            imagebox = article.find('figure', class_='hz-Listing-image-container')
                             largest_image_url = None
                             if imagebox:
                                 img = imagebox.find('img')
@@ -211,13 +259,12 @@ def scrape(max_pages=2):
                                     largest_image_url = img.get('src') or img.get('srcset')
                             
                             # Only add the item if we have at least a title and link
-                            if title and link:
+                            if title and link and not is_featured:
                                 page_data_list.append({
                                     'title': {
                                         'original': title,
                                         'english': title,
                                     },
-                                    'description': description,
                                     'main_image': largest_image_url,
                                     'link': full_link,
                                     'price': {
@@ -255,7 +302,7 @@ def scrape(max_pages=2):
         current_time = datetime.now().isoformat()
         for page in all_pages_data.values():
             for listing in page:
-                listing['source'] = 'kleinanzeigen'
+                listing['source'] = 'marktplaats'
                 listing['scraped_at'] = current_time
 
         return all_pages_data
@@ -286,5 +333,4 @@ if __name__ == "__main__":
         print(f"- URLs: {url_count}")
         print(f"- Prices: {price_count}")
         print(f"- Images: {image_count}")
-        print(f"- Descriptions: {sum(1 for ad in all_listings if ad['description'])}")
         print(f"- Timestamps: {sum(1 for ad in all_listings if ad['timestamp'])}")
