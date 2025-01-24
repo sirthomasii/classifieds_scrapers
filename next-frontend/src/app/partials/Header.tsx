@@ -2,6 +2,7 @@ import { TextInput, Select, ComboboxData } from '@mantine/core';
 import { IconSearch } from '@tabler/icons-react';
 import styles from '../viewport/viewport.module.css';
 import { SE, GB, DE, PL, DK, FI, NL, CH } from 'country-flag-icons/react/3x2';
+import React from 'react';
 
 const FLAG_SIZE = { width: '20px', height: '12px', marginRight: '8px' };
 
@@ -59,9 +60,15 @@ export function Header({
           value={selectedMarketplace}
           onChange={(value) => onMarketplaceChange(value || 'all')}
           data={MARKETPLACE_DATA}
-          renderOption={({ option }) => (
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              {(option as MarketplaceItem).flag}
+          leftSection={
+            MARKETPLACE_DATA.find(item => item.value === selectedMarketplace)?.flag
+          }
+          leftSectionWidth={40}
+          renderOption={({ option }: { option: MarketplaceItem }) => (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {option.flag && React.cloneElement(option.flag, {
+                style: { ...FLAG_SIZE, marginRight: '8px' }
+              })}
               <span>{option.label}</span>
             </div>
           )}
@@ -81,7 +88,10 @@ export function Header({
               '&:hover': {
                 backgroundColor: '#1C1E23'
               }
-            },
+            }
+          }}
+          leftSectionProps={{
+            style: { paddingLeft: '8px' }
           }}
         />
         <TextInput
