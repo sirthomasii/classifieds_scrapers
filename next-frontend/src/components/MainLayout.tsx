@@ -46,6 +46,7 @@ export function MainLayout({
   const [totalItems, setTotalItems] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [itemsPerPage, setItemsPerPage] = useState(15);
 
   // Cleanup function for ResizeObserver
   useEffect(() => {
@@ -72,7 +73,7 @@ export function MainLayout({
       try {
         setIsLoading(true);
         const response = await fetch(
-          `/api/listings?page=${currentPage}&limit=50${selectedMarketplace !== 'all' ? `&source=${selectedMarketplace}` : ''}${searchQuery ? `&search=${encodeURIComponent(searchQuery)}` : ''}`
+          `/api/listings?page=${currentPage}&limit=${itemsPerPage}${selectedMarketplace !== 'all' ? `&source=${selectedMarketplace}` : ''}${searchQuery ? `&search=${encodeURIComponent(searchQuery)}` : ''}`
         );
         const result = await response.json();
 
@@ -101,18 +102,8 @@ export function MainLayout({
           ricardo: { all: [] }
         });
 
-        // If it's the first page, replace data, otherwise append
-        setMarketplaceData(prev => {
-          if (!prev || currentPage === 1) return groupedData;
-          
-          // Merge new data with existing data
-          const merged = { ...prev };
-          Object.keys(groupedData).forEach(source => {
-            if (!merged[source as keyof typeof merged]) merged[source as keyof typeof merged] = { all: [] };
-            merged[source as keyof typeof merged].all = [...merged[source as keyof typeof merged].all, ...groupedData[source].all];
-          });
-          return merged;
-        });
+        // Always replace data since we're using server-side pagination
+        setMarketplaceData(groupedData);
       } catch (error) {
         console.error('Error fetching data:', error);
         setMarketplaceData(null);
@@ -122,15 +113,43 @@ export function MainLayout({
     };
 
     fetchData();
-  }, [currentPage, selectedMarketplace, searchQuery]);
+  }, [currentPage, selectedMarketplace, searchQuery, itemsPerPage]);
 
-  const handleLoadMore = () => {
-    setCurrentPage(prev => prev + 1);
+  useEffect(() => {
+    const handleItemsPerPage = () => {
+      const width = window.innerWidth;
+      if (width > 1400) { // 5 columns
+        setItemsPerPage(15);
+      } else if (width > 1100) { // 4 columns
+        setItemsPerPage(12);
+      } else if (width > 768) { // 3 columns
+        setItemsPerPage(9);
+      } else { // 2 columns
+        setItemsPerPage(6);
+      }
+    };
+
+    // Set initial value
+    handleItemsPerPage();
+
+    // Add event listener
+    window.addEventListener('resize', handleItemsPerPage);
+
+    // Cleanup
+    return () => window.removeEventListener('resize', handleItemsPerPage);
+  }, []);
+
+  const handleLoadMore = (buffer: number) => {
+    // No need to implement load more since we're using server-side pagination
   };
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
     setCurrentPage(1); // Reset to first page when searching
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
   };
 
   const getCurrentMarketplaceData = () => {
@@ -182,6 +201,7 @@ export function MainLayout({
           onMarketplaceChange={setSelectedMarketplace}
           onLoadMore={handleLoadMore}
           onSearch={handleSearch}
+          onPageChange={handlePageChange}
         />
       </Box>
     </Container>

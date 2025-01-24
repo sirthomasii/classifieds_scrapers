@@ -154,7 +154,7 @@ def clean_price(price_str):
     if not price_str:
         return None
     # Remove €, VB (Verhandlungsbasis/negotiable), spaces, and handle German number format
-    cleaned = price_str.replace('€', '').replace('VB', '').replace(' ', '').strip()
+    cleaned = price_str.replace('€', '').replace('&nbsp;', '').replace(' ', '').strip()
     try:
         # Convert German number format (1.234,56 -> 1234.56)
         cleaned = cleaned.replace('.', '').replace(',', '.')
@@ -166,6 +166,7 @@ def scrape(max_pages=2):
     # URLs to scrape
     urls = [
         ("https://www.marktplaats.nl/l/computers-en-software/", "computers"),
+        ("https://www.marktplaats.nl/l/audio-tv-en-foto/", "audio-photo"),
         # ("https://www.kleinanzeigen.de/s-musikinstrumente/", "music")
     ]
 
@@ -238,14 +239,9 @@ def scrape(max_pages=2):
                             # description = description_container.get_text(strip=True) if description_container else None
                             
                             # Get price
-                            price_container = article.find('span', class_=lambda x: x and 'hz-text-price-label' in x)
+                            price_container = article.find('span', class_=lambda x: x and 'hz-Listing-price' in x)
                             if price_container:
-                                # Get text from innermost font element, or fall back to direct text
-                                font_elements = price_container.find_all('font')
-                                if font_elements:
-                                    price_text = font_elements[-1].get_text(strip=True)
-                                else:
-                                    price_text = price_container.get_text(strip=True)
+                                price_text = price_container.get_text(strip=True)
                             else:
                                 price_text = None
                             price = clean_price(price_text)

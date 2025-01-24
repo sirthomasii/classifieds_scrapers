@@ -19,7 +19,7 @@ interface ViewportProps {
   onMarketplaceChange: (marketplace: string) => void;
   onLoadMore: (buffer: number) => void;
   onSearch: (query: string) => void;
-
+  onPageChange?: (page: number) => void;
 }
 
 export function Viewport({
@@ -28,7 +28,8 @@ export function Viewport({
   selectedMarketplace,
   onMarketplaceChange,
   onLoadMore,
-  onSearch
+  onSearch,
+  onPageChange
 }: ViewportProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
@@ -128,7 +129,8 @@ export function Viewport({
     setCurrentPage(1);
   }, [activeSearch, selectedCategory, selectedMarketplace]);
 
-  const totalPages = Math.ceil(sortedData.length / itemsPerPage);
+  // Calculate total pages based on total items from server and items per page
+  const totalPages = Math.ceil((marketplaceData?.total ?? 0) / itemsPerPage);
   
   // Ensure current page is valid
   useEffect(() => {
@@ -138,10 +140,7 @@ export function Viewport({
   }, [totalPages, currentPage]);
 
   // Use sortedData directly since filtering is now done by the API
-  const displayedItems = sortedData.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  const displayedItems = sortedData;
 
   // Insert ad at random position
   const displayedItemsWithAd = useMemo(() => {
@@ -188,9 +187,9 @@ const displayedItemsWithoutAd = useMemo(() => {
       } else if (width > 1100) { // 4 columns
         setItemsPerPage(12);
       } else if (width > 768) { // 3 columns
-        setItemsPerPage(12);
+        setItemsPerPage(9);
       } else { // 2 columns
-        setItemsPerPage(12);
+        setItemsPerPage(6);
       }
     };
 
@@ -219,6 +218,7 @@ const displayedItemsWithoutAd = useMemo(() => {
 
   const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage);
+    onPageChange?.(newPage);
     scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
